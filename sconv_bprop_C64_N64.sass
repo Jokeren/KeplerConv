@@ -6,6 +6,7 @@
 // LEA->MOV, IADD, SHL
 // XMAD.LO2C->IMAD.U32.U32
 // XMAD.PSL->IMAD.U32.U32
+// VMAD->IMAD, IADD
 // MOV->MOV32I
 // control code
 // comments
@@ -242,17 +243,20 @@ LUT_LOOP:
 // x       = x % str_w
 -:-:-:-:00 IMAD    x_prime, x, param_magic_str_w, RZ;
 -:-:-:-:00 SHR.U32 x_prime, x_prime, param_shift_str_w;
--:-:-:-:00 VMAD.U16.U16 x, -x_prime, str_w, x;
+-:-:-:-:00 IMAD tmp_param0, str_w, x_prime, RZ;
+-:-:-:-:00 IADD x, -tmp_param0, x;
 // y_prime = y / str_h
 // y       = y % str_h
 -:-:-:-:00 IMAD    y_prime, y, param_magic_str_h, RZ;
 -:-:-:-:00 SHR.U32 y_prime, y_prime, param_shift_str_h;
--:-:-:-:00 VMAD.U16.U16 y, -y_prime, str_h, y;
+-:-:-:-:00 IMAD tmp_param0, str_h, y_prime, RZ;
+-:-:-:-:00 IADD y, -tmp_param0, y;
 // z_prime = z / str_d
 // z       = z % str_d
 -:-:-:-:00 IMAD    z_prime, z, param_magic_str_d, RZ;
 -:-:-:-:00 SHR.U32 z_prime, z_prime, param_shift_str_d;
--:-:-:-:00 VMAD.U16.U16 z, -z_prime, str_d, z;
+-:-:-:-:00 IMAD tmp_param0, str_d, z_prime, RZ;
+-:-:-:-:00 IADD z, -tmp_param0, z;
 
 // calculate x_prime only when x % str_w == 0
 // it may be greater than Q due to its location
@@ -321,7 +325,9 @@ END_SETUP:
 -:-:-:-:00 FFMA channel, channel, 5.9604644775390625e-08, channel;
 -:-:-:-:00 F2I.S32.F32.TRUNC channel, channel;
 // lutOffset = (posCRST % lutSize) * 8
--:-:-:-:00 VMAD.U16.U16 lutOffset, -channel, lutSize, posCRST;
+-:-:-:-:00 IMAD tmp_param0, channel, lutSize, RZ;
+-:-:-:-:00 IADD lutOffset, -tmp_param0, posCRST;
+
 -:-:-:-:00 SHL lutOffset, lutOffset, 3;
 // P1 = tidY < partial
 -:-:-:-:00 ISETP.LT.AND P1, PT, tidY, partial, PT;
@@ -388,7 +394,8 @@ END_SETUP:
 -:-:-:-:00 @P1 FFMA channel, channel, 5.9604644775390625e-08, channel;
 -:-:-:-:00 @P1 F2I.S32.F32.TRUNC channel, channel;
 // lutOffset = (posCRST % lutSize) * 8
--:-:-:-:00 @P1 VMAD.U16.U16 lutOffset, -channel, lutSize, posCRST;
+-:-:-:-:00 @P1 IMAD tmp_param0, channel, lutSize, RZ;
+-:-:-:-:00 @P1 IADD lutOffset, -tmp_param0, posCRST;
 -:-:-:-:00 @P1 SHL lutOffset, lutOffset, 3;
 // offsetIC = channel * DHWN
 // offsetFC = channel * K
@@ -437,7 +444,9 @@ LOOP:
         j0c44 => "-:-:-:-:00 \@P1 FFMA channel, channel, 5.9604644775390625e-08, channel;\n",
         j0c46 => "-:-:-:-:00 \@P1 F2I.S32.F32.TRUNC channel, channel;\n",
 
-        j1c8  => "-:-:-:-:00 \@P1 VMAD.U16.U16 lutOffset, -channel, lutSize, posCRST;\n",
+        j1c8  => "-:-:-:-:00 \@P1 IMAD tmp_param0, channel, lutSize, RZ;\n".
+                 "-:-:-:-:00 \@P1 IADD lutOffset, -tmp_param0, posCRST;\n",
+
         j1c13 => "-:-:-:-:00 \@P1 SHL lutOffset, lutOffset, 3;\n",
 
         j1c37 => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<0*64 +  0>], loadF0;\n",
@@ -445,8 +454,8 @@ LOOP:
 
         j1c62 => "-:-:-:-:00 \@P1 LDS.U.64 sliceIF, [lutOffset + addr_lut];\n",
 
-        j2c10 => "-:-:-:-:00 \@P1 IMAD     offsetFc, channel, param_KRST, RZ;\n",
-        j2c15 => "-:-:-:-:00 \@P1 IMAD     offsetIc, channel, param_DHWN,    RZ;\n",
+        j2c10 => "-:-:-:-:00 \@P1 IMAD offsetFc, channel, param_KRST, RZ;\n",
+        j2c15 => "-:-:-:-:00 \@P1 IMAD offsetIc, channel, param_DHWN, RZ;\n",
         j2c22 => "-:-:-:-:00 IADD posCRST, posCRST, -8;\n",
 
         j2c29 => "-:-:-:-:00 \@P1 IADD offsetF, offsetFk, offsetFc;\n".
