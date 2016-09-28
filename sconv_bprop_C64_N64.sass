@@ -524,12 +524,6 @@ LOOP:
 
             my $ins    = $insert{"j${j}c$c"} || '';
 
-            my $stall  = $ins =~ /LDS|I2I|I2F|F2I|F2F|LDG|STS|BAR|BRA/ ? 0 : 1;
-
-            my $yield  = $c == 32 && $stall ? 'Y' : '-';
-
-            my $wait   = $c == 0 ? '01' : '--';
-
             my $ctrl   = "-:-:-:-:00";
 
             $out .= sprintf "%s FFMA cx%dy%d, j%dIx%d, j%dFy%d, cx%dy%d;\n%s", $ctrl,  $x,$y,  $odd,$x,  $odd,$y,  $x,$y,  $ins;

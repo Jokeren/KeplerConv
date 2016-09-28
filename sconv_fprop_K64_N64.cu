@@ -1,8 +1,6 @@
 extern "C"
-__global__ void __launch_bounds__(64) sconv_fprop_s8_K64_N64
-(
-    unsigned int* param_Rand,
-    float*        param_O,
+__global__ void __launch_bounds__(64) sconv_fprop_K64_N64 (
+    float* param_O,
     const float*  param_I,
     const float*  param_F,
     float param_alpha,
@@ -18,8 +16,6 @@ __global__ void __launch_bounds__(64) sconv_fprop_s8_K64_N64
     int param_C,
     int param_CRST,
     int param_RST,
-    int param_magic_RST,
-    int param_shift_RST,
     int param_RS,
     int param_magic_RS,
     int param_shift_RS,
@@ -32,7 +28,6 @@ __global__ void __launch_bounds__(64) sconv_fprop_s8_K64_N64
     int param_str_d,
     int param_str_h,
     int param_str_w,
-    int param_P,
     int param_Q,
     int param_PQ,
     int param_QN,
@@ -41,12 +36,8 @@ __global__ void __launch_bounds__(64) sconv_fprop_s8_K64_N64
     int param_magic_Q,
     int param_shift_Q,
     int param_magic_PQ,
-    int param_shift_PQ,
-    int param_part_P,
-    int param_part_Q,
-    int param_part_PQ
-)
-{
+    int param_shift_PQ
+) {
     __shared__ float share[64*8*4 + 8];
 
     int tid = threadIdx.x;
