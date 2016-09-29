@@ -1,4 +1,12 @@
 # Kernel: sconv_fprop_K64_N64
+// debug
+//-:-:-:-:00 MOV tmp_param0, param_test[0];
+//-:-:-:-:00 MOV tmp_param1, param_test[1];
+//
+//-:-:-:-:00 MOV32I k, 0x40000000;
+//-:-:-:-:00 ST.E [tmp_param0], k;
+//-:-:-:-:00 EXIT;
+
 // modify steps:
 // XMAD->IMAD
 // addr_zero->RZ
@@ -22,47 +30,48 @@
     addr_szLut : 4x<64*8*4 + 7>
     addr_lut   : 4x<64*8*4 + 8>
 
-    param_O[0]         : c[0x0][0x140]
-    param_O[1]         : c[0x0][0x144]
-    param_I[0]         : c[0x0][0x148]
-    param_I[1]         : c[0x0][0x14c]
-    param_F[0]         : c[0x0][0x150]
-    param_F[1]         : c[0x0][0x154]
-    param_alpha        : c[0x0][0x158]
-    param_N            : c[0x0][0x15c]
-    param_K            : c[0x0][0x160]
-    param_D            : c[0x0][0x164]
-    param_H            : c[0x0][0x168]
-    param_W            : c[0x0][0x16c]
-    param_WN           : c[0x0][0x170]
-    param_HWN          : c[0x0][0x174]
-    param_DHWN         : c[0x0][0x178]
-    param_C            : c[0x0][0x17c]
-    param_KRST         : c[0x0][0x180]
-    param_RST          : c[0x0][0x184]
-    param_RS           : c[0x0][0x188]
-    param_magic_RS     : c[0x0][0x18c]
-    param_shift_RS     : c[0x0][0x190]
-    param_S            : c[0x0][0x194]
-    param_magic_S      : c[0x0][0x198]
-    param_shift_S      : c[0x0][0x19c]
-    param_pad_d        : c[0x0][0x1a0]
-    param_pad_h        : c[0x0][0x1a4]
-    param_pad_w        : c[0x0][0x1a8]
-    param_str_d        : c[0x0][0x1ac]
-    param_str_h        : c[0x0][0x1b0]
-    param_str_w        : c[0x0][0x1b4]
-    param_Q            : c[0x0][0x1b8]
-    param_PQ           : c[0x0][0x1bc]
-    param_QN           : c[0x0][0x1c0]
-    param_PQN          : c[0x0][0x1c4]
-    param_MPQN         : c[0x0][0x1c8]
-    param_magic_Q      : c[0x0][0x1cc]
-    param_shift_Q      : c[0x0][0x1d0]
-    param_magic_PQ     : c[0x0][0x1d4]
-    param_shift_PQ     : c[0x0][0x1d8]
+    param_test[0]  : c[0x0][0x140]
+    param_test[1]  : c[0x0][0x144]
+    param_O[0]     : c[0x0][0x148]
+    param_O[1]     : c[0x0][0x14c]
+    param_I[0]     : c[0x0][0x150]
+    param_I[1]     : c[0x0][0x154]
+    param_F[0]     : c[0x0][0x158]
+    param_F[1]     : c[0x0][0x15c]
+    param_alpha    : c[0x0][0x160]
+    param_N        : c[0x0][0x164]
+    param_K        : c[0x0][0x168]
+    param_D        : c[0x0][0x16c]
+    param_H        : c[0x0][0x170]
+    param_W        : c[0x0][0x174]
+    param_WN       : c[0x0][0x178]
+    param_HWN      : c[0x0][0x17c]
+    param_DHWN     : c[0x0][0x180]
+    param_C        : c[0x0][0x184]
+    param_KRST     : c[0x0][0x188]
+    param_RST      : c[0x0][0x18c]
+    param_RS       : c[0x0][0x190]
+    param_magic_RS : c[0x0][0x194]
+    param_shift_RS : c[0x0][0x198]
+    param_S        : c[0x0][0x19c]
+    param_magic_S  : c[0x0][0x1a0]
+    param_shift_S  : c[0x0][0x1a4]
+    param_pad_d    : c[0x0][0x1a8]
+    param_pad_h    : c[0x0][0x1ac]
+    param_pad_w    : c[0x0][0x1b0]
+    param_str_d    : c[0x0][0x1b4]
+    param_str_h    : c[0x0][0x1b8]
+    param_str_w    : c[0x0][0x1bc]
+    param_Q        : c[0x0][0x1c0]
+    param_PQ       : c[0x0][0x1c4]
+    param_QN       : c[0x0][0x1c8]
+    param_PQN      : c[0x0][0x1cc]
+    param_MPQN     : c[0x0][0x1d0]
+    param_magic_Q  : c[0x0][0x1d4]
+    param_shift_Q  : c[0x0][0x1d8]
+    param_magic_PQ : c[0x0][0x1dc]
+    param_shift_PQ : c[0x0][0x1e0]
 </CONSTANT_MAPPING>
-
 
 <REGISTER_MAPPING>
 
@@ -83,22 +92,38 @@
     33,32,41,40,49,48,57,56 : cx<0-7>y6
     37,36,45,44,53,52,61,60 : cx<0-7>y7
 
-    64-79 : j0Ix<0-7>, j0Fy<0-7>
-    80-95 : j1Ix<0-7>, j1Fy<0-7>
+    64-67 : j0Ix<0-3>
+    68-71 : j0Fy<0-3>
+    72-75 : j0Ix<4-7>
+    76-79 : j0Fy<4-7>
+    80-83 : j1Ix<0-3>
+    84-87 : j1Fy<0-3>
+    88-91 : j1Ix<4-7>
+    92-95 : j1Fy<4-7>
 
     108-113 ~ offsetF, offsetIc, offsetFc
     114-115 : sliceI, sliceF
     114-115 : sliceIF<0-1>
 
-      96-99 : trackI<0-1>, trackF<0-1>
-    100-115 : loadI<0-7>,  loadF<0-7>,
+      96-97 : trackI<0-1>
+      98-99 : trackF<0-1>
+
+    100-103 : loadI<0-3>
+    104-107 : loadF<0-3>
+    108-111 : loadI<4-7>
+    112-115 : loadF<4-7>
 
     116-125 ~ writeS, offsetIn, offsetFk, posCRST, posCRSTf, channel, lutSize, lutSizeRcp, lutOffset, offsetI
     126-127 ~ readFs, readIs
-    128-135 ~ tmp_data, tmp_shl, tmp_param0, tmp_param1, p_and
+
+    128-129 : tmp_data, tmp_shl
+    130-131 : tmp_param0, tmp_param1
+    132 : p_and
+    134-135 : tmp_param0<0-1>
 
     72-79   : cs<0-7>
     80-81   : Out<0-1>
+
     82-125  ~ writeCs, readCs, alpha, tidOX, tidOY, to, k, n, MPQN1, MPQN28, MPQN, MPQN4
 
 </REGISTER_MAPPING>
@@ -161,6 +186,7 @@
 -:-:-:-:00 BFE.U32 readIs, tid,    0x301; // 3 bits at position 1
 -:-:-:-:00 ISCADD  readIs, readIs, 4x<8*64>, 4;
 
+
 -:-:-:-:00 @P0 BRA.U END_SETUP;
 
 -:-:-:-:00 MOV rst,        tid;
@@ -191,7 +217,7 @@
 -:-:-:-:00 @P1 IADD q, -q, param_Q;
 -:-:-:-:00 @P1 IADD q, q, dep_thd_mask;
 
--:-:-:-:00 STS.128 [addr_m], m;
+-:-:-:-:00 STS.128 [RZ + addr_m], m;
 
 // mt = m * w - pad_d
 // pr = p * u - pad_h
@@ -207,6 +233,7 @@
 // dep_thd_mask = dep_thd_mask >> mask_shr
 -:-:-:-:00 IADD    mask_shr, -tid, 32;
 -:-:-:-:00 SHR.U32 dep_thd_mask, dep_thd_mask, mask_shr;
+
 
 LUT_LOOP:
 
@@ -283,7 +310,7 @@ LUT_LOOP:
 -:-:-:-:00 @P0 BRA.U LUT_LOOP;
 
 // Share the lut size with the other warp
--:-:-:-:00 STS [addr_szLut], lutSize;
+-:-:-:-:00 STS [RZ + addr_szLut], lutSize;
 
 // if tid >= 32, directly enter it
 END_SETUP:
@@ -292,7 +319,7 @@ END_SETUP:
 
 // Grab the caclulated lut size and get it's reciprical
 // Get the total reduction depth
--:-:-:-:00 LDS lutSize, [addr_szLut];
+-:-:-:-:00 LDS lutSize, [RZ + addr_szLut];
 // endCRST = lutSize * param_C (channel)
 -:-:-:-:00 IMAD endCRST, lutSize, param_C, RZ;
 // lutSizeRcp = 1 / lutSize
@@ -328,19 +355,30 @@ END_SETUP:
 -:-:-:-:00 IADD posCRST, posCRST, -partial;
 -:-:-:-:00 @P1 LDS.U.64 sliceIF, [lutOffset + addr_lut];
 
-// trackI = offsetIN + offsetIC + sliceI + param_I
+// trackF = offsetFK + offsetFC + sliceF + param_F
 -:-:-:-:00 @P1 IADD offsetF, offsetFk, offsetFc;
 -:-:-:-:00 @P1 IADD offsetF, offsetF, sliceF;
-// trackF = offsetFK + offsetFC + sliceF + param_F
+// trackI = offsetIN + offsetIC + sliceI + param_I
 -:-:-:-:00 @P1 IADD offsetI, offsetIn, offsetIc;
 -:-:-:-:00 @P1 IADD offsetI, offsetI, sliceI;
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
+
 -:-:-:-:00 MOV tmp_param0, param_F[0];
 -:-:-:-:00 MOV tmp_param1, param_F[1];
 -:-:-:-:00 SHL tmp_shl, offsetF, 0x2;
 -:-:-:-:00 IADD trackF0.CC, tmp_shl, tmp_param0;
 -:-:-:-:00 IADD.X trackF1, RZ, tmp_param1;
+//-:-:-:-:00 MOV tmp_param0, param_test[0];
+//-:-:-:-:00 MOV tmp_param1, param_test[1];
+//
+//-:-:-:-:00 SHL tmp_shl, tid, 0x2;
+//-:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
+//-:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
+//-:-:-:-:00 I2F.F32.U32 rst, rst;
+//-:-:-:-:00 ST.E [tmp_param00], rst;
+//-:-:-:-:00 EXIT;
+
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
 -:-:-:-:00 MOV tmp_param0, param_I[0];
@@ -349,12 +387,12 @@ END_SETUP:
 -:-:-:-:00 IADD trackI0.CC, tmp_shl, tmp_param0;
 -:-:-:-:00 IADD.X trackI1, RZ, tmp_param1;
 
--:-:-:-:00 @P1 LD.E.CI.128 loadF0, [trackF + 4x< 0>];
+-:-:-:-:00 @P1 LD.E.CI.128 loadF0, [trackF + 4x<0>];
 -:-:-:-:00 @P1 LD.E.CI.128 loadF4, [trackF + 4x<32>];
 -:-:-:-:00 @!P1 LDS.U.128 loadF0, [RZ + addr_zero];
 -:-:-:-:00 @!P1 LDS.U.128 loadF4, [RZ + addr_zero];
 
--:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
+-:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x<0>];
 -:-:-:-:00 @P1 LD.E.128 loadI4, [trackI + 4x<32>];
 -:-:-:-:00 @!P1 LDS.U.128 loadI0, [RZ + addr_zero];
 -:-:-:-:00 @!P1 LDS.U.128 loadI4, [RZ + addr_zero];
@@ -443,7 +481,7 @@ LOOP:
 
         j2c10 => "-:-:-:-:00 \@P1 IMAD offsetFc, channel, param_KRST, RZ;\n",
         j2c15 => "-:-:-:-:00 \@P1 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;\n",
-        j2c22 => "-:-:-:-:00     IADD posCRST, posCRST, -8;\n",
+        j2c22 => "-:-:-:-:00 IADD posCRST, posCRST, -8;\n",
 
         j2c29 => "-:-:-:-:00 \@P1 IADD offsetF, offsetFk, offsetFc;\n".
                  "-:-:-:-:00 \@P1 IADD offsetF, offsetF, sliceF;\n",
@@ -518,11 +556,10 @@ LOOP:
 
 </CODE>
 
--:-:-:-:00 LDS.U.128 mpq, [addr_m];
+-:-:-:-:00 LDS.U.128 mpq, [RZ + addr_m];
 -:-:-:-:00 S2R tid,  SR_TID.X; // 0-64
 -:-:-:-:00 S2R blkI, SR_CTAID.Z; // N id
 -:-:-:-:00 S2R blkF, SR_CTAID.Y; // K id
-
 
 // tidOX = (tid & 7) << 2
 // tidOY = tid >> 3

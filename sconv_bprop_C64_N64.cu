@@ -1,5 +1,5 @@
 extern "C"
-__global__ void __launch_bounds__(64) sconv_bprop_C64_N64
+__global__ void sconv_bprop_C64_N64
 (
     float*        param_O,
     const float*  param_I,
