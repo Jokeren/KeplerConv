@@ -66,13 +66,13 @@
 
 <REGISTER_MAPPING>
 
-      64-67 : mpq<0-3>
-      64-67 : m, p, q, tidY
-      68-71 ~ tid, blkF, blkI, blkMPQ
-      72-95 ~ tid1, tidX
-     72-107 ~ pq, mask_shr, rst, lutStore, lutStore2, warp_count, mt, pr, qs, dep_thd_mask, dep_thd_bits, dep_thd_cnt, t, r, s, rs, x, y, z, ballot, warp_slices, partial, endCRST
+    64-67 : mpq<0-3>
+    64-67 : m, p, q, tidY
+    68-71 ~ tid, blkF, blkI, blkMPQ
+    72-95 ~ tid1, tidX
+    72-107 ~ pq, mask_shr, rst, lutStore, lutStore2, warp_count, mt, pr, qs, dep_thd_mask, dep_thd_bits, dep_thd_cnt, t, r, s, rs, x, y, z, ballot, warp_slices, partial, endCRST
 
-    0-63    : czero<00-63>
+    0-63 : czero<00-63>
 
      3, 2,11,10,19,18,27,26 : cx<0-7>y0
      7, 6,15,14,23,22,31,30 : cx<0-7>y1
@@ -83,8 +83,8 @@
     33,32,41,40,49,48,57,56 : cx<0-7>y6
     37,36,45,44,53,52,61,60 : cx<0-7>y7
 
-      64-79 : j0Ix<0-7>, j0Fy<0-7>
-      80-95 : j1Ix<0-7>, j1Fy<0-7>
+    64-79 : j0Ix<0-7>, j0Fy<0-7>
+    80-95 : j1Ix<0-7>, j1Fy<0-7>
 
     108-113 ~ offsetF, offsetIc, offsetFc
     114-115 : sliceI, sliceF
