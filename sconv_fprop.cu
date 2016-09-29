@@ -106,14 +106,14 @@ bool fprop(const float *I, const float *F, float *O,
   WN = W * N;
   HWN = H * WN;
   DHWN = D * HWN;
-  RS = R*S;
+  RS = R * S;
   RST = T * RS;
   KRST = K * RST;
 
   QN = Q * N;
   PQN = P * QN;
   MPQN = M * PQN;
-  PQ = P*Q;
+  PQ = P * Q;
 
   magic64(Q, magic_Q, shift_Q);
   magic64(PQ, magic_PQ, shift_PQ);
@@ -132,8 +132,8 @@ bool fprop(const float *I, const float *F, float *O,
   std::string name = "sconv_fprop_K64_N64";
   CUresult res = cuLaunchKernel(nervana_kernels[name], gridX, gridY, gridZ, 64, 1, 1, 0, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
-      std::cerr << "Error launching kernel " << name << " " << res << std::endl;
-      return false;
+    std::cerr << "Error launching kernel " << name << " " << res << std::endl;
+    return false;
   }
 
   return true;
@@ -141,9 +141,9 @@ bool fprop(const float *I, const float *F, float *O,
 
 int main() {
   float *d_I, *d_F, *d_O;
-  unsigned int N=64, C=1, K=64, D=1, H=28, W=28, T=1, R=5, S=5;
-  unsigned int str_d=1, str_h=1, str_w=1;
-  unsigned int pad_d=0, pad_h=0, pad_w=0;
+  unsigned int N = 64, C = 1, K = 64, D = 1, H = 28, W = 28, T = 1, R = 5, S = 5;
+  unsigned int str_d = 1, str_h = 1, str_w = 1;
+  unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;
   M = (D - T + 2 * pad_d) / str_d + 1;
   P = (H - R + 2 * pad_h) / str_h + 1;
@@ -176,13 +176,15 @@ int main() {
     std::cerr << "Launch error" << std::endl;
   }
 
-  //float* h_O = (float *)malloc(sizeof(float) * K * M * P * Q * N);
-  //for (int i = 0; i < K * M * P * Q * N; ++i) {
-  //   h_O[i] = 1.0;
-  //}
-  //cudaError_t result = cudaMemcpy(h_O, d_O, sizeof(float)*K*M*P*Q*N, cudaMemcpyDeviceToHost);
+  std::cout << "result" << std::endl;
 
-  //free(h_O);
+  float* h_O = (float *)malloc(sizeof(float) * K * M * P * Q * N);
+  cudaMemcpy(h_O, d_O, sizeof(float) * K * M * P * Q * N, cudaMemcpyDeviceToHost);
+  for (int i = 0; i < K * M * P * Q * N; ++i) {
+    std::cout << h_O[i] << " ";
+  }
+
+  free(h_O);
   free(h_I);
   free(h_F);
   cudaFree(d_I);
