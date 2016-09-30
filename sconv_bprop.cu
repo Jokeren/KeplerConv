@@ -1,6 +1,6 @@
 #include "sconv.h"
 
-bool bprop(const float *O, const float *F, float *I,
+bool bprop(float *I, const float *F, const float *I,
   unsigned int N, unsigned int C, unsigned int K,
   unsigned int D, unsigned int H, unsigned int W,
   unsigned int R, unsigned int S, unsigned int T,
@@ -114,12 +114,12 @@ int main() {
   cudaMalloc((void**)&d_I, sizeof(float) * N * C * D * H * W);
   cudaMalloc((void**)&d_F, sizeof(float) * K * R * S * T);
   cudaMalloc((void**)&d_O, sizeof(float) * K * M * P * Q * N);
-  cudaMemcpy(d_O, h_O, sizeof(float) * N * C * D * H * W,
+  cudaMemcpy(d_O, h_O, sizeof(float) * N * M * P * Q * K,
     cudaMemcpyHostToDevice);
   cudaMemcpy(d_F, h_F, sizeof(float) * K * R * S * T,
     cudaMemcpyHostToDevice);
 
-  if (!bprop(d_O, d_F, d_I, N, C, K, D, H, W, R, S, T, M, P, Q, str_d, str_h, str_w, pad_d, pad_h, pad_w)) {
+  if (!bprop(d_I, d_F, d_O, N, C, K, D, H, W, R, S, T, M, P, Q, str_d, str_h, str_w, pad_d, pad_h, pad_w)) {
     std::cerr << "Launch error" << std::endl;
   }
 
