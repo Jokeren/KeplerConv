@@ -50,7 +50,7 @@ bool fprop(const float *I, const float *F, float *O,
   int gridZ = N / 64 + (N % 64 != 0);
 
   std::string name = "sconv_fprop_K64_N64";
-  CUresult res = cuLaunchKernel(nervana_kernels[name], gridX, gridY, gridZ, 64, 1, 1, 0, 0, args, NULL);
+  CUresult res = cuLaunchKernel(nervana_kernels[name], gridX, gridY, gridZ, 64, 1, 1, R * S * T * 4 * 2, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
     std::cerr << "Error launching kernel " << name << " " << res << std::endl;
     return false;
