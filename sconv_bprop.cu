@@ -1,6 +1,6 @@
 #include "sconv.h"
 
-bool bprop(float *I, const float *F, const float *I,
+bool bprop(float *I, const float *F, const float *O,
   unsigned int N, unsigned int C, unsigned int K,
   unsigned int D, unsigned int H, unsigned int W,
   unsigned int R, unsigned int S, unsigned int T,
