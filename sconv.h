@@ -11,8 +11,7 @@
 std::map<std::string, CUfunction> nervana_kernels;
 std::vector<CUmodule> nervana_modules;
 
-int len_d2b(int n)
-{
+int len_d2b(int n) {
   int i, j = 0;
   i = n;
   while (i) {
@@ -22,13 +21,15 @@ int len_d2b(int n)
   return j;
 }
 
-void magic32(unsigned int nmax, unsigned int d, unsigned int& m, unsigned int& p)
-{
+void magic32(unsigned int nmax, unsigned int d, unsigned int& m, unsigned int& p) {
   long nc = ((nmax + 1) / d) * d - 1;
   long nbits = len_d2b(nmax);
-  for(long p = 0; p < 2 * nbits + 1; p++) {   
+  std::cout << "nbits " << nbits << std::endl;
+  for(p = 0; p < 2 * nbits + 1; p++) {   
     if(pow(2, p) > nc * (d - 1 - (long)(pow(2, p) - 1) % d)) {
       m = (pow(2, p) + d - 1 -(long)(pow(2, p) - 1) % d) / d;
+      std::cout << "m " << m << std::endl;
+      std::cout << "p " << p << std::endl;
       return;
     }   
   }   

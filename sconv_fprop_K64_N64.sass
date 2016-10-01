@@ -21,6 +21,8 @@
 // STG->ST
 // control code
 // comments
+// LDS.U->LDS
+// trunc error!!!!!
 
 <CONSTANT_MAPPING>
     addr_zero  : 4x<64*8*4 + 0>
@@ -77,7 +79,7 @@
 
     64-67 : mpq<0-3>
     64-67 : m, p, q, tidY
-    68-71 ~ tid, blkF, blkI, blkMPQ
+    68-70 : blkF, blkI, blkMPQ
     72-95 ~ tid1, tidX
     72-107 ~ pq, mask_shr, rst, lutStore, lutStore2, warp_count, mt, pr, qs, dep_thd_mask, dep_thd_bits, dep_thd_cnt, t, r, s, rs, x, y, z, ballot, warp_slices, partial, endCRST
 
@@ -102,8 +104,8 @@
     92-95 : j1Fy<4-7>
 
     108-113 ~ offsetF, offsetIc, offsetFc
-    114-115 : sliceI, sliceF
-    114-115 : sliceIF<0-1>
+    140-141 : sliceI, sliceF
+    140-141 : sliceIF<0-1>
 
       96-97 : trackI<0-1>
       98-99 : trackF<0-1>
@@ -119,6 +121,7 @@
     128-129 : tmp_data, tmp_shl
     130-131 : tmp_param0, tmp_param1
     132 : p_and
+    133 : tid
     134-135 : tmp_param0<0-1>
 
     72-79   : cs<0-7>
@@ -139,7 +142,7 @@
 
 -:-:-:-:00 STS.128 [RZ + addr_zero], RZ;
 <CODE>
-    return join '', map sprintf("-:-:-:-:00 LDS.U.128 czero%02d, [RZ + addr_zero];\n", $_ * 4), 0..15;
+    return join '', map sprintf("-:-:-:-:00 LDS.128 czero%02d, [RZ + addr_zero];\n", $_ * 4), 0..15;
 </CODE>
 
 // tid <= 63
@@ -174,7 +177,7 @@
 -:-:-:-:00 SHL     writeS, writeS, 2;
 
 // readFs  = (((tid & 0x30) >> 3) | (tid & 1)) << 4;
-// [0][5][4] * 4;
+// [0][5][4] * 16;
 -:-:-:-:00 LOP.AND tid1,   tid,    1;
 -:-:-:-:00 LOP.AND readFs, tid,    0x30;
 -:-:-:-:00 SHR.U32 readFs, readFs, 3;
@@ -303,6 +306,7 @@ LUT_LOOP:
 -:-:-:-:00 @P1 ISCADD lutStore, dep_thd_cnt, lutStore, 3;
 // Store both slice offsets in the lut
 -:-:-:-:00 @P1 STS.64 [lutStore + addr_lut], sliceIF;
+
 // Keep track of the total size of the lut
 // lutSize = lutSize + warp_slices
 -:-:-:-:00 IADD lutSize, lutSize, warp_slices;
@@ -317,6 +321,7 @@ END_SETUP:
 
 -:-:-:-:00 BAR.SYNC 0;
 
+
 // Grab the caclulated lut size and get it's reciprical
 // Get the total reduction depth
 -:-:-:-:00 LDS lutSize, [RZ + addr_szLut];
@@ -329,6 +334,7 @@ END_SETUP:
 // posCRST = endCRST - tidY - 1
 -:-:-:-:00 IADD posCRST, endCRST, -1;
 -:-:-:-:00 IADD posCRST, posCRST, -tidY;
+
 // If this value is not a multiple of 8 we want to grab the partial amount on the first fetch.
 // If it is a multiple of 8 then make a full 8 line fetch.
 -:-:-:-:00 LOP.AND partial, endCRST, 7;
@@ -341,19 +347,23 @@ END_SETUP:
 -:-:-:-:00 FMUL channel, posCRSTf, lutSizeRcp;
 -:-:-:-:00 FFMA channel, channel, 5.9604644775390625e-08, channel;
 -:-:-:-:00 F2I.S32.F32.TRUNC channel, channel;
+-:-:-:-:00 MOV channel, RZ;
+
 // lutOffset = (posCRST % lutSize) * 8
--:-:-:-:00 @P1 IMAD tmp_param0, channel, lutSize, RZ;
--:-:-:-:00 @P1 IADD lutOffset, -tmp_param0, posCRST;
+-:-:-:-:00 IMAD tmp_param0, channel, lutSize, RZ;
+-:-:-:-:00 IADD lutOffset, -tmp_param0, posCRST;
 -:-:-:-:00 SHL lutOffset, lutOffset, 3;
 // P1 = tidY < partial
 -:-:-:-:00 ISETP.LT.AND P1, PT, tidY, partial, PT;
+
 // offsetIC = channel * DHWN
 // offsetFC = channel * K
--:-:-:-:00 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;
--:-:-:-:00 IMAD offsetFc, channel, param_KRST, RZ;
+-:-:-:-:00 @P1 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;
+-:-:-:-:00 @P1 IMAD offsetFc, channel, param_KRST, RZ;
 // posCRST -= partial
 -:-:-:-:00 IADD posCRST, posCRST, -partial;
--:-:-:-:00 @P1 LDS.U.64 sliceIF, [lutOffset + addr_lut];
+-:-:-:-:00 @P1 LDS.64 sliceIF, [lutOffset + addr_lut];
+
 
 // trackF = offsetFK + offsetFC + sliceF + param_F
 -:-:-:-:00 @P1 IADD offsetF, offsetFk, offsetFc;
@@ -364,14 +374,13 @@ END_SETUP:
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
 
--:-:-:-:00 MOV tmp_param0, param_F[0];
--:-:-:-:00 MOV tmp_param1, param_F[1];
--:-:-:-:00 SHL tmp_shl, offsetF, 0x2;
--:-:-:-:00 IADD trackF0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 IADD.X trackF1, RZ, tmp_param1;
+-:-:-:-:00 @P1 MOV tmp_param0, param_F[0];
+-:-:-:-:00 @P1 MOV tmp_param1, param_F[1];
+-:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
+-:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
 //-:-:-:-:00 MOV tmp_param0, param_test[0];
 //-:-:-:-:00 MOV tmp_param1, param_test[1];
-//
 //-:-:-:-:00 SHL tmp_shl, tid, 0x2;
 //-:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
 //-:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
@@ -381,21 +390,21 @@ END_SETUP:
 
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
--:-:-:-:00 MOV tmp_param0, param_I[0];
--:-:-:-:00 MOV tmp_param1, param_I[1];
--:-:-:-:00 SHL tmp_shl, offsetI, 0x2;
--:-:-:-:00 IADD trackI0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 IADD.X trackI1, RZ, tmp_param1;
+-:-:-:-:00 @P1 MOV tmp_param0, param_I[0];
+-:-:-:-:00 @P1 MOV tmp_param1, param_I[1];
+-:-:-:-:00 @P1 SHL tmp_shl, offsetI, 0x2;
+-:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackI1, RZ, tmp_param1;
 
 -:-:-:-:00 @P1 LD.E.CI.128 loadF0, [trackF + 4x<0>];
 -:-:-:-:00 @P1 LD.E.CI.128 loadF4, [trackF + 4x<32>];
--:-:-:-:00 @!P1 LDS.U.128 loadF0, [RZ + addr_zero];
--:-:-:-:00 @!P1 LDS.U.128 loadF4, [RZ + addr_zero];
+-:-:-:-:00 @!P1 LDS.128 loadF0, [RZ + addr_zero];
+-:-:-:-:00 @!P1 LDS.128 loadF4, [RZ + addr_zero];
 
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x<0>];
 -:-:-:-:00 @P1 LD.E.128 loadI4, [trackI + 4x<32>];
--:-:-:-:00 @!P1 LDS.U.128 loadI0, [RZ + addr_zero];
--:-:-:-:00 @!P1 LDS.U.128 loadI4, [RZ + addr_zero];
+-:-:-:-:00 @!P1 LDS.128 loadI0, [RZ + addr_zero];
+-:-:-:-:00 @!P1 LDS.128 loadI4, [RZ + addr_zero];
 
 -:-:-:-:00 ISETP.GE.AND P1, PT, posCRST, RZ, PT;
 
@@ -410,15 +419,18 @@ END_SETUP:
 -:-:-:-:00 BAR.SYNC 0;
 -:-:-:-:00 LOP.XOR writeS, writeS, 4x<64*8*2>;
 
--:-:-:-:00 LDS.U.128 j0Ix0, [readIs + 4x<0*64 + 00>];
--:-:-:-:00 LDS.U.128 j0Fy0, [readFs + 4x<0*64 + 00>];
--:-:-:-:00 LDS.U.128 j0Ix4, [readIs + 4x<0*64 + 32>];
--:-:-:-:00 LDS.U.128 j0Fy4, [readFs + 4x<0*64 + 32>];
+-:-:-:-:00 LDS.128 j0Ix0, [readIs + 4x<0*64 + 00>];
+-:-:-:-:00 LDS.128 j0Fy0, [readFs + 4x<0*64 + 00>];
+
+-:-:-:-:00 LDS.128 j0Ix4, [readIs + 4x<0*64 + 32>];
+-:-:-:-:00 LDS.128 j0Fy4, [readFs + 4x<0*64 + 32>];
+
 
 // channel = posCRST / lutSize
 -:-:-:-:00 @P1 FMUL channel, posCRSTf, lutSizeRcp;
 -:-:-:-:00 @P1 FFMA channel, channel, 5.9604644775390625e-08, channel;
 -:-:-:-:00 @P1 F2I.S32.F32.TRUNC channel, channel;
+-:-:-:-:00 @P1 MOV channel, RZ;
 // lutOffset = (posCRST % lutSize) * 8
 -:-:-:-:00 @P1 IMAD tmp_param0, channel, lutSize, RZ;
 -:-:-:-:00 @P1 IADD lutOffset, -tmp_param0, posCRST;
@@ -429,7 +441,15 @@ END_SETUP:
 -:-:-:-:00 @P1 IMAD      offsetFc, channel, param_KRST, RZ;
 
 -:-:-:-:00 IADD posCRST, posCRST, -8;
--:-:-:-:00 @P1 LDS.U.64 sliceIF, [lutOffset + addr_lut];
+-:-:-:-:00 @P1 LDS.64 sliceIF, [lutOffset + addr_lut];
+//-:-:-:-:00 @P1 MOV tmp_param0, param_test[0];
+//-:-:-:-:00 @P1 MOV tmp_param1, param_test[1];
+//-:-:-:-:00 @P1 SHL tmp_shl, tid, 0x2;
+//-:-:-:-:00 @P1 IADD tmp_param00.CC, tmp_shl, tmp_param0;
+//-:-:-:-:00 @P1 IADD.X tmp_param01, RZ, tmp_param1;
+//-:-:-:-:00 @P1 I2F.F32.U32 sliceF, sliceF;
+//-:-:-:-:00 @P1 ST.E [tmp_param00], sliceF;
+//-:-:-:-:00 EXIT;
 
 // trackI = offsetIN + offsetIC + sliceI + param_I
 // trackF = offsetFK + offsetFC + sliceF + param_F
@@ -439,22 +459,24 @@ END_SETUP:
 -:-:-:-:00 @P1 IADD offsetI, offsetI, sliceI;
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
--:-:-:-:00 MOV tmp_param0, param_F[0];
--:-:-:-:00 MOV tmp_param1, param_F[1];
--:-:-:-:00 SHL tmp_shl, offsetF, 0x2;
--:-:-:-:00 IADD trackF0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 IADD.X trackF1, RZ, tmp_param1;
+-:-:-:-:00 @P1 MOV tmp_param0, param_F[0];
+-:-:-:-:00 @P1 MOV tmp_param1, param_F[1];
+-:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
+-:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
--:-:-:-:00 MOV tmp_param0, param_I[0];
--:-:-:-:00 MOV tmp_param1, param_I[1];
--:-:-:-:00 SHL tmp_shl, offsetI, 0x2;
--:-:-:-:00 IADD trackI0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 IADD.X trackI1, RZ, tmp_param1;
--:-:-:-:00 @P1 LD.E.CI.128 loadF0, [trackF + 4x< 0>];
--:-:-:-:00 @P1 LD.E.CI.128 loadF4, [trackF + 4x<32>];
+-:-:-:-:00 @P1 MOV tmp_param0, param_I[0];
+-:-:-:-:00 @P1 MOV tmp_param1, param_I[1];
+-:-:-:-:00 @P1 SHL tmp_shl, offsetI, 0x2;
+-:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackI1, RZ, tmp_param1;
+
+-:-:-:-:00 @P1 LD.E.128 loadF0, [trackF + 4x< 0>];
+-:-:-:-:00 @P1 LD.E.128 loadF4, [trackF + 4x<32>];
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.128 loadI4, [trackI + 4x<32>];
+
 
 LOOP:
 
@@ -468,7 +490,8 @@ LOOP:
 
         j0c39 => "-:-:-:-:00 \@P1 FMUL channel, posCRSTf, lutSizeRcp;\n",
         j0c44 => "-:-:-:-:00 \@P1 FFMA channel, channel, 5.9604644775390625e-08, channel;\n",
-        j0c46 => "-:-:-:-:00 \@P1 F2I.S32.F32.TRUNC channel, channel;\n",
+        j0c46 => "-:-:-:-:00 \@P1 F2I.S32.F32.TRUNC channel, channel;\n".
+                 "-:-:-:-:00 \@P1 MOV channel, RZ;\n",
 
         j1c8  => "-:-:-:-:00 \@P1 IMAD tmp_param0, channel, lutSize, RZ;\n".
                  "-:-:-:-:00 \@P1 IADD lutOffset, -tmp_param0, posCRST;\n",
@@ -477,7 +500,7 @@ LOOP:
         j1c37 => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<0*64 +  0>], loadF0;\n",
         j1c39 => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<0*64 + 32>], loadF4;\n",
 
-        j1c62 => "-:-:-:-:00 \@P1 LDS.U.64 sliceIF, [lutOffset + addr_lut];\n",
+        j1c62 => "-:-:-:-:00 \@P1 LDS.64 sliceIF, [lutOffset + addr_lut];\n",
 
         j2c10 => "-:-:-:-:00 \@P1 IMAD offsetFc, channel, param_KRST, RZ;\n",
         j2c15 => "-:-:-:-:00 \@P1 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;\n",
@@ -487,11 +510,11 @@ LOOP:
                  "-:-:-:-:00 \@P1 IADD offsetF, offsetF, sliceF;\n",
         j2c36 => "-:-:-:-:00 \@P1 IADD offsetI, offsetIn, offsetIc;\n".
                  "-:-:-:-:00 \@P1 IADD offsetI, offsetI, sliceI;\n",
-        j2c38 => "-:-:-:-:00 MOV tmp_param0, param_F[0];\n".
-                 "-:-:-:-:00 MOV tmp_param1, param_F[1];\n".
-                 "-:-:-:-:00 SHL tmp_shl, offsetF, 0x2;\n".
-                 "-:-:-:-:00 IADD trackF0.CC, tmp_shl, tmp_param0;\n".
-                 "-:-:-:-:00 IADD.X trackF1, RZ, tmp_param1;\n",
+        j2c38 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_F[0];\n".
+                 "-:-:-:-:00 \@P1 MOV tmp_param1, param_F[1];\n".
+                 "-:-:-:-:00 \@P1 SHL tmp_shl, offsetF, 0x2;\n".
+                 "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, tmp_param0;\n".
+                 "-:-:-:-:00 \@P1 IADD.X trackF1, RZ, tmp_param1;\n",
 
         j2c40 => "-:-:-:-:00 \@P1 LD.E.CI.128 loadF0, [trackF + 4x< 0>];\n",
         j2c42 => "-:-:-:-:00 \@P1 LD.E.CI.128 loadF4, [trackF + 4x<32>];\n",
@@ -499,11 +522,11 @@ LOOP:
         j6c8  => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<8*64 +  0>], loadI0;\n",
         j6c10 => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<8*64 + 32>], loadI4;\n",
 
-        j6c60 => "-:-:-:-:00 MOV tmp_param0, param_I[0];\n".
-                 "-:-:-:-:00 MOV tmp_param1, param_I[1];\n".
-                 "-:-:-:-:00 SHL tmp_shl, offsetI, 0x2;\n".
-                 "-:-:-:-:00 IADD trackI0.CC, tmp_shl, tmp_param0;\n".
-                 "-:-:-:-:00 IADD.X trackI1, RZ, tmp_param1;\n",
+        j6c60 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_I[0];\n".
+                 "-:-:-:-:00 \@P1 MOV tmp_param1, param_I[1];\n".
+                 "-:-:-:-:00 \@P1 SHL tmp_shl, offsetI, 0x2;\n".
+                 "-:-:-:-:00 \@P1 IADD trackI0.CC, tmp_shl, tmp_param0;\n".
+                 "-:-:-:-:00 \@P1 IADD.X trackI1, RZ, tmp_param1;\n",
 
         j6c62 => "-:-:-:-:00 \@P0 BAR.SYNC 0;\n" .
                  "-:-:-:-:00 \@P0 LOP.XOR readIs, readIs, 4x<64*8*2>;\n" .
@@ -536,10 +559,10 @@ LOOP:
         my $rsOffset = ($j + 1) % 8;
         my $rsPred   = $j == 7 ? '@P0' : '   ';
 
-        $insert{"j${j}c0"} = sprintf "-:-:-:-:00 %s LDS.U.128 j%dIx0, [readIs + 4x<%d*64 + 00>];\n", $rsPred, $nOdd, $rsOffset;
-        $insert{"j${j}c2"} = sprintf "-:-:-:-:00 %s LDS.U.128 j%dFy0, [readFs + 4x<%d*64 + 00>];\n", $rsPred, $nOdd, $rsOffset;
-        $insert{"j${j}c4"} = sprintf "-:-:-:-:00 %s LDS.U.128 j%dIx4, [readIs + 4x<%d*64 + 32>];\n", $rsPred, $nOdd, $rsOffset;
-        $insert{"j${j}c6"} = sprintf "-:-:-:-:00 %s LDS.U.128 j%dFy4, [readFs + 4x<%d*64 + 32>];\n", $rsPred, $nOdd, $rsOffset;
+        $insert{"j${j}c0"} = sprintf "-:-:-:-:00 %s LDS.128 j%dIx0, [readIs + 4x<%d*64 + 00>];\n", $rsPred, $nOdd, $rsOffset;
+        $insert{"j${j}c2"} = sprintf "-:-:-:-:00 %s LDS.128 j%dFy0, [readFs + 4x<%d*64 + 00>];\n", $rsPred, $nOdd, $rsOffset;
+        $insert{"j${j}c4"} = sprintf "-:-:-:-:00 %s LDS.128 j%dIx4, [readIs + 4x<%d*64 + 32>];\n", $rsPred, $nOdd, $rsOffset;
+        $insert{"j${j}c6"} = sprintf "-:-:-:-:00 %s LDS.128 j%dFy4, [readFs + 4x<%d*64 + 32>];\n", $rsPred, $nOdd, $rsOffset;
 
         foreach my $c (0 .. 63)
         {
@@ -556,7 +579,7 @@ LOOP:
 
 </CODE>
 
--:-:-:-:00 LDS.U.128 mpq, [RZ + addr_m];
+-:-:-:-:00 LDS.128 mpq, [RZ + addr_m];
 -:-:-:-:00 S2R tid,  SR_TID.X; // 0-64
 -:-:-:-:00 S2R blkI, SR_CTAID.Z; // N id
 -:-:-:-:00 S2R blkF, SR_CTAID.Y; // K id
@@ -672,8 +695,8 @@ STORE_C:
 // Warp shuffle to drop the awkward readAs/readBs mapping
 -:-:-:-:00 STS.128 [writeCs + 4x<00>], cs0;
 -:-:-:-:00 STS.128 [writeCs + 4x<32>], cs4;
--:-:-:-:00 LDS.U.128 cs0, [readCs + 4x<00>];
--:-:-:-:00 LDS.U.128 cs4, [readCs + 4x<32>];
+-:-:-:-:00 LDS.128 cs0, [readCs + 4x<00>];
+-:-:-:-:00 LDS.128 cs4, [readCs + 4x<32>];
 
 // Store results back to global
 -:-:-:-:00 @P2 ST.E.CG.128 [Out + 4x<00>], cs0;

@@ -38,8 +38,8 @@ bool fprop(const float *I, const float *F, float *O,
   // test param set up
   float *test_param;
   cudaError_t cuda_error;
-  cuda_error = cudaMalloc((void**)&test_param, sizeof(float) * 128);
-  cudaMemset(test_param, 0, sizeof(float) * 128);
+  cuda_error = cudaMalloc((void**)&test_param, sizeof(float) * 1024);
+  cudaMemset(test_param, 0, sizeof(float) * 1024);
   // arguments
   void *args[37] = {&test_param, &O, &I, &F, &alpha,
     &N, &K, &D, &H, &W, &WN, &HWN, &DHWN,
@@ -50,7 +50,8 @@ bool fprop(const float *I, const float *F, float *O,
   int gridX = gridMPQ;
   int gridY = K / 64 + (K % 64 != 0);
   int gridZ = N / 64 + (N % 64 != 0);
-  CUresult res = cuLaunchKernel(nervana_kernels[kernel_name], gridX, gridY, gridZ, 64, 1, 1, RST * 4 * 2, 0, args, NULL);
+  CUresult res = cuLaunchKernel(nervana_kernels[kernel_name],
+    gridX, gridY, gridZ, 64, 1, 1, 64 * 8 * 4 + RST * 4 * 2 + 8, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
     std::cerr << "Line " << __LINE__ << " error launching kernel " << kernel_name << " " << res << std::endl;
     return false;
