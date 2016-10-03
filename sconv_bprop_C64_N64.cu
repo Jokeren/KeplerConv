@@ -1,9 +1,9 @@
 extern "C"
-__global__ void sconv_bprop_C64_N64
-(
-    float*        param_O,
-    const float*  param_I,
-    const float*  param_F,
+__global__ void sconv_bprop_C64_N64 (
+    float* param_test,
+    float* param_O,
+    const float* param_I,
+    const float* param_F,
     float param_alpha,
     int param_N,
     int param_K,
@@ -47,11 +47,12 @@ __global__ void sconv_bprop_C64_N64
     int param_shift_str_d
 )
 {
-    __shared__ float share[64*8*4 + 8];
+    __shared__ float share[64 * 8 * 4 + 8];
 
     int tid = threadIdx.x;
 
     share[tid] = 1;
 
     *param_O = share[63-tid];
+    *param_test = share[63-tid];
 }
