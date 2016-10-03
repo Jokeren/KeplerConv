@@ -31,8 +31,6 @@ bool fprop(const float *I, const float *F, float *O,
   // magic numbers
   magic32(PQ, Q, magic_Q, shift_Q);
   magic32(PQM, PQ, magic_PQ, shift_PQ);
-  //magic64(PQ, magic_PQ, shift_PQ);
-  //magic64(Q, magic_Q, shift_Q);
   magic32(RST + 32, RS, magic_RS, shift_RS);
   magic32(RS + 32, S, magic_S, shift_S);
   // test param set up
