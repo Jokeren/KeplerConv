@@ -1,5 +1,16 @@
 # Kernel: sconv_fprop_K64_N64
-// debug
+// debug:
+// mode1
+//-:-:-:-:00 MOV tmp_param0, param_test[0];
+//-:-:-:-:00 MOV tmp_param1, param_test[1];
+//-:-:-:-:00 SHL tmp_shl, tid, 0x2;
+//-:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
+//-:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
+//-:-:-:-:00 I2F.F32.U32 rst, rst;
+//-:-:-:-:00 ST.E [tmp_param00], rst;
+//-:-:-:-:00 EXIT;
+
+// mode2
 //-:-:-:-:00 MOV tmp_param0, param_test[0];
 //-:-:-:-:00 MOV tmp_param1, param_test[1];
 //
@@ -23,6 +34,8 @@
 // comments
 // LDS.U->LDS
 // trunc error!!!!!
+// register<0-7>->register<0-3>, register<4-7>
+// avoid register conflicts
 
 <CONSTANT_MAPPING>
     addr_zero  : 4x<64*8*4 + 0>
@@ -321,7 +334,6 @@ END_SETUP:
 
 -:-:-:-:00 BAR.SYNC 0;
 
-
 // Grab the caclulated lut size and get it's reciprical
 // Get the total reduction depth
 -:-:-:-:00 LDS lutSize, [RZ + addr_szLut];
@@ -371,23 +383,14 @@ END_SETUP:
 // trackI = offsetIN + offsetIC + sliceI + param_I
 -:-:-:-:00 @P1 IADD offsetI, offsetIn, offsetIc;
 -:-:-:-:00 @P1 IADD offsetI, offsetI, sliceI;
+
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
-
 -:-:-:-:00 @P1 MOV tmp_param0, param_F[0];
 -:-:-:-:00 @P1 MOV tmp_param1, param_F[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
 -:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
 -:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
-//-:-:-:-:00 MOV tmp_param0, param_test[0];
-//-:-:-:-:00 MOV tmp_param1, param_test[1];
-//-:-:-:-:00 SHL tmp_shl, tid, 0x2;
-//-:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
-//-:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
-//-:-:-:-:00 I2F.F32.U32 rst, rst;
-//-:-:-:-:00 ST.E [tmp_param00], rst;
-//-:-:-:-:00 EXIT;
-
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
 -:-:-:-:00 @P1 MOV tmp_param0, param_I[0];
@@ -425,7 +428,6 @@ END_SETUP:
 -:-:-:-:00 LDS.128 j0Ix4, [readIs + 4x<0*64 + 32>];
 -:-:-:-:00 LDS.128 j0Fy4, [readFs + 4x<0*64 + 32>];
 
-
 // channel = posCRST / lutSize
 -:-:-:-:00 @P1 FMUL channel, posCRSTf, lutSizeRcp;
 -:-:-:-:00 @P1 FFMA channel, channel, 5.9604644775390625e-08, channel;
@@ -442,14 +444,6 @@ END_SETUP:
 
 -:-:-:-:00 IADD posCRST, posCRST, -8;
 -:-:-:-:00 @P1 LDS.64 sliceIF, [lutOffset + addr_lut];
-//-:-:-:-:00 @P1 MOV tmp_param0, param_test[0];
-//-:-:-:-:00 @P1 MOV tmp_param1, param_test[1];
-//-:-:-:-:00 @P1 SHL tmp_shl, tid, 0x2;
-//-:-:-:-:00 @P1 IADD tmp_param00.CC, tmp_shl, tmp_param0;
-//-:-:-:-:00 @P1 IADD.X tmp_param01, RZ, tmp_param1;
-//-:-:-:-:00 @P1 I2F.F32.U32 sliceF, sliceF;
-//-:-:-:-:00 @P1 ST.E [tmp_param00], sliceF;
-//-:-:-:-:00 EXIT;
 
 // trackI = offsetIN + offsetIC + sliceI + param_I
 // trackF = offsetFK + offsetFC + sliceF + param_F
@@ -457,6 +451,7 @@ END_SETUP:
 -:-:-:-:00 @P1 IADD offsetF, offsetF, sliceF;
 -:-:-:-:00 @P1 IADD offsetI, offsetIn, offsetIc;
 -:-:-:-:00 @P1 IADD offsetI, offsetI, sliceI;
+
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
 -:-:-:-:00 @P1 MOV tmp_param0, param_F[0];
@@ -464,6 +459,7 @@ END_SETUP:
 -:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
 -:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
 -:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
+
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
 -:-:-:-:00 @P1 MOV tmp_param0, param_I[0];
@@ -476,7 +472,6 @@ END_SETUP:
 -:-:-:-:00 @P1 LD.E.128 loadF4, [trackF + 4x<32>];
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.128 loadI4, [trackI + 4x<32>];
-
 
 LOOP:
 
@@ -510,6 +505,7 @@ LOOP:
                  "-:-:-:-:00 \@P1 IADD offsetF, offsetF, sliceF;\n",
         j2c36 => "-:-:-:-:00 \@P1 IADD offsetI, offsetIn, offsetIc;\n".
                  "-:-:-:-:00 \@P1 IADD offsetI, offsetI, sliceI;\n",
+
         j2c38 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_F[0];\n".
                  "-:-:-:-:00 \@P1 MOV tmp_param1, param_F[1];\n".
                  "-:-:-:-:00 \@P1 SHL tmp_shl, offsetF, 0x2;\n".
