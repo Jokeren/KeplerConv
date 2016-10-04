@@ -293,6 +293,7 @@ LUT_LOOP:
 -:-:-:-:00 IMAD      sliceI, x, param_N,   RZ;
 -:-:-:-:00 IMAD.U32.U32 sliceI, y, param_WN, sliceI;
 -:-:-:-:00 IMAD.U32.U32 sliceI, z, param_HWN, sliceI;
+
 // sliceF = rst * K
 -:-:-:-:00 IMAD sliceF, rst, param_K, RZ;
 
@@ -337,6 +338,7 @@ END_SETUP:
 // Grab the caclulated lut size and get it's reciprical
 // Get the total reduction depth
 -:-:-:-:00 LDS lutSize, [RZ + addr_szLut];
+
 // endCRST = lutSize * param_C (channel)
 -:-:-:-:00 IMAD endCRST, lutSize, param_C, RZ;
 // lutSizeRcp = 1 / lutSize
@@ -359,7 +361,6 @@ END_SETUP:
 -:-:-:-:00 FMUL channel, posCRSTf, lutSizeRcp;
 -:-:-:-:00 FFMA channel, channel, 5.9604644775390625e-08, channel;
 -:-:-:-:00 F2I.S32.F32.TRUNC channel, channel;
--:-:-:-:00 MOV channel, RZ;
 
 // lutOffset = (posCRST % lutSize) * 8
 -:-:-:-:00 IMAD tmp_param0, channel, lutSize, RZ;
@@ -432,7 +433,6 @@ END_SETUP:
 -:-:-:-:00 @P1 FMUL channel, posCRSTf, lutSizeRcp;
 -:-:-:-:00 @P1 FFMA channel, channel, 5.9604644775390625e-08, channel;
 -:-:-:-:00 @P1 F2I.S32.F32.TRUNC channel, channel;
--:-:-:-:00 @P1 MOV channel, RZ;
 // lutOffset = (posCRST % lutSize) * 8
 -:-:-:-:00 @P1 IMAD tmp_param0, channel, lutSize, RZ;
 -:-:-:-:00 @P1 IADD lutOffset, -tmp_param0, posCRST;
@@ -485,8 +485,7 @@ LOOP:
 
         j0c39 => "-:-:-:-:00 \@P1 FMUL channel, posCRSTf, lutSizeRcp;\n",
         j0c44 => "-:-:-:-:00 \@P1 FFMA channel, channel, 5.9604644775390625e-08, channel;\n",
-        j0c46 => "-:-:-:-:00 \@P1 F2I.S32.F32.TRUNC channel, channel;\n".
-                 "-:-:-:-:00 \@P1 MOV channel, RZ;\n",
+        j0c46 => "-:-:-:-:00 \@P1 F2I.S32.F32.TRUNC channel, channel;\n",
 
         j1c8  => "-:-:-:-:00 \@P1 IMAD tmp_param0, channel, lutSize, RZ;\n".
                  "-:-:-:-:00 \@P1 IADD lutOffset, -tmp_param0, posCRST;\n",
@@ -512,8 +511,8 @@ LOOP:
                  "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, tmp_param0;\n".
                  "-:-:-:-:00 \@P1 IADD.X trackF1, RZ, tmp_param1;\n",
 
-        j2c40 => "-:-:-:-:00 \@P1 LD.E.CI.128 loadF0, [trackF + 4x< 0>];\n",
-        j2c42 => "-:-:-:-:00 \@P1 LD.E.CI.128 loadF4, [trackF + 4x<32>];\n",
+        j2c40 => "-:-:-:-:00 \@P1 LD.E.128 loadF0, [trackF + 4x< 0>];\n",
+        j2c42 => "-:-:-:-:00 \@P1 LD.E.128 loadF4, [trackF + 4x<32>];\n",
 
         j6c8  => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<8*64 +  0>], loadI0;\n",
         j6c10 => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<8*64 + 32>], loadI4;\n",

@@ -80,7 +80,7 @@ int main() {
   cudaFree(0);
   // params
   float *d_I, *d_F, *d_O;
-  unsigned int N = 64, C = 1, K = 64, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
+  unsigned int N = 64, C = 3, K = 64, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
   unsigned int str_d = 1, str_h = 1, str_w = 1;
   unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;
@@ -93,19 +93,19 @@ int main() {
   for (int i = 0; i < C * D * H * W * N; ++i) {
     h_I[i] = 1;
   }
-  float *h_F = (float *)malloc(R * S * T * K * sizeof(float));
-  for (int i = 0; i < R * S * T * K; ++i) {
+  float *h_F = (float *)malloc(C * R * S * T * K * sizeof(float));
+  for (int i = 0; i < C * R * S * T * K; ++i) {
     h_F[i] = 1;
   }
   float* h_O = (float *)malloc(sizeof(float) * K * M * P * Q * N);
   // device memory
   cudaMalloc((void**)&d_I, sizeof(float) * C * D * H * W * N);
-  cudaMalloc((void**)&d_F, sizeof(float) * R * S * T * K);
+  cudaMalloc((void**)&d_F, sizeof(float) * C * R * S * T * K);
   cudaMalloc((void**)&d_O, sizeof(float) * K * M * P * Q * N);
   // memcpy h_I, h_F
   cudaMemcpy(d_I, h_I, sizeof(float) * C * D * H * W * N,
     cudaMemcpyHostToDevice);
-  cudaMemcpy(d_F, h_F, sizeof(float) * R * S * T * K,
+  cudaMemcpy(d_F, h_F, sizeof(float) * C * R * S * T * K,
     cudaMemcpyHostToDevice);
   // load kernels 
   if (!load_kernels("./")) {
