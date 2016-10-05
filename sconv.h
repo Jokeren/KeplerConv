@@ -57,7 +57,7 @@ bool load_kernels(const char* const base_path_cstr) {
     std::string names[3] = {
         "sconv_fprop_K64_N64",
         "sconv_bprop_C64_N64",
-        "sconv_update_C64_K64"
+        "sconv_update_C128_K128"
     };
 
     std::string base_path(base_path_cstr);

@@ -1,5 +1,7 @@
 #include "sconv.h"
 
+std::string name = "sconv_update_C128_K128";
+
 bool update(const float *I, float *F, const float *O,
   unsigned int N, unsigned int C, unsigned int K,
   unsigned int D, unsigned int H, unsigned int W,
@@ -62,7 +64,6 @@ bool update(const float *I, float *F, const float *O,
   int gridY = CRST / 128 + (CRST % 128 != 0);
   int gridZ = N / 64 + (N % 64 != 0);
 
-  std::string name = "sconv_update_C128_K128";
   CUresult res = cuLaunchKernel(nervana_kernels[name], gridX, gridY, gridZ, 256, 1, 1, R * S * T * 4 * 2, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
     std::cerr << "Error launching kernel " << name << " " << res << std::endl;

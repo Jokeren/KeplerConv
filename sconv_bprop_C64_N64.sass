@@ -261,16 +261,17 @@ LUT_LOOP:
 -:-:-:-:00 IADD s, -s, param_S;
 -:-:-:-:00 IADD s, s, -one;
 
-// t = T - t - 1
+// r = R - r - 1
 -:-:-:-:00 IADD r, -r, param_R;
 -:-:-:-:00 IADD r, r, -one;
 
-// r = R - r - 1
+// t = T - t - 1
 -:-:-:-:00 IADD t, -t, param_T;
 -:-:-:-:00 IADD t, t, -one;
 
 -:-:-:-:00 IMAD  rst_prime, r, param_S,  s;
 -:-:-:-:00 IMAD  rst_prime, t, param_RS, rst_prime;
+
 // x_prime = x / str_w
 // x       = x % str_w
 -:-:-:-:00 IMAD    x_prime, x, param_magic_str_w, RZ;

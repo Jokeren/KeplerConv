@@ -54,8 +54,9 @@ bool bprop(float *I, const float *F, const float *O,
   void *args[45] = {
     &test_param, &I, &O, &F, &alpha,
     &N, &C, &M, &P, &Q, &QN, &PQN, &MPQN,
-    &K, &CRST, &RST, &RS,
-    &magic_RS, &shift_RS, &S, &magic_S, &shift_S,
+    &K, &CRST, &RST,
+    &RS, &magic_RS, &shift_RS,
+    &S, &magic_S, &shift_S,
     &pad_d, &pad_h, &pad_w,
     &str_d, &str_h, &str_w,
     &W, &HW, &WN, &HWN, &DHWN,
@@ -100,7 +101,7 @@ int main() {
   cudaFree(0);
   // params
   float *d_I, *d_F, *d_O;
-  unsigned int N = 64, C = 64, K = 1, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
+  unsigned int N = 64, C = 64, K = 3, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
   unsigned int str_d = 1, str_h = 1, str_w = 1;
   unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;
@@ -108,7 +109,7 @@ int main() {
   M = (D - T + 2 * pad_d) / str_d + 1;
   P = (H - R + 2 * pad_h) / str_h + 1;
   Q = (W - S + 2 * pad_w) / str_w + 1;
-  float *h_O = (float *)malloc(M * P * Q * K * N * sizeof(float));
+  float *h_O = (float *)malloc(K * M * P * Q * N * sizeof(float));
   for (int i = 0; i < K * M * P * Q * N; ++i) {
     h_O[i] = 1;
   }
@@ -116,7 +117,7 @@ int main() {
   for (int i = 0; i < K * R * S * T * C; ++i) {
     h_F[i] = 1;
   }
-  float* h_I = (float *)malloc(sizeof(float) * K * M * P * Q * N);
+  float* h_I = (float *)malloc(sizeof(float) * C * D * H * W * N);
   // device memory
   cudaMalloc((void**)&d_I, sizeof(float) * C * D * H * W * N);
   cudaMalloc((void**)&d_F, sizeof(float) * K * R * S * T * C);
@@ -143,7 +144,7 @@ int main() {
     std::cerr << "Line " << __LINE__ << " memcpy error: " << cuda_error << std::endl;
     exit(1);
   }
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 128; ++i) {
     std::cout << h_I[i] << " ";
   }
   std::cout << std::endl;
