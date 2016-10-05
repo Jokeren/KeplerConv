@@ -1,6 +1,6 @@
 #include "sconv.h"
 
-std::string kernel_name = "sconv_bprop_K64_N64";
+std::string kernel_name = "sconv_bprop_C64_N64";
 
 bool bprop(float *I, const float *F, const float *O,
   unsigned int N, unsigned int C, unsigned int K,
@@ -51,12 +51,20 @@ bool bprop(float *I, const float *F, const float *O,
   cudaError_t cuda_error;
   cuda_error = cudaMalloc((void**)&test_param, sizeof(float) * 1024);
   cudaMemset(test_param, 0, sizeof(float) * 1024);
-  void *args[40] = {&test_param, &I, &O, &F, &alpha,
+  void *args[45] = {
+    &test_param, &I, &O, &F, &alpha,
     &N, &C, &M, &P, &Q, &QN, &PQN, &MPQN,
-    &K, &CRST, &RST, &RS, &magic_RS, &shift_RS, &S, &magic_S, &shift_S,
-    &pad_d, &pad_h, &pad_w, &str_d, &str_h, &str_w,
-    &W, &HW, &WN, &HWN, &DHWN, &magic_W, &shift_HW,
-    &R, &T, &magic_str_w, &magic_str_h, &magic_str_d};
+    &K, &CRST, &RST, &RS,
+    &magic_RS, &shift_RS, &S, &magic_S, &shift_S,
+    &pad_d, &pad_h, &pad_w,
+    &str_d, &str_h, &str_w,
+    &W, &HW, &WN, &HWN, &DHWN,
+    &magic_W, &shift_W,
+    &magic_HW, &shift_HW,
+    &R, &T,
+    &magic_str_w, &shift_str_w,
+    &magic_str_h, &shift_str_h,
+    &magic_str_d, &shift_str_d};
   int gridDWH = D * W * H;
   int gridX = gridDWH;
   int gridY = C / 64 + (C % 64 != 0);
@@ -101,22 +109,22 @@ int main() {
   P = (H - R + 2 * pad_h) / str_h + 1;
   Q = (W - S + 2 * pad_w) / str_w + 1;
   float *h_O = (float *)malloc(M * P * Q * K * N * sizeof(float));
-  for (int i = 0; i < M * P * Q * K * N; ++i) {
+  for (int i = 0; i < K * M * P * Q * N; ++i) {
     h_O[i] = 1;
   }
-  float *h_F = (float *)malloc(K * R * S * T * sizeof(float));
-  for (int i = 0; i < K * R * S * T; ++i) {
+  float *h_F = (float *)malloc(K * R * S * T * C * sizeof(float));
+  for (int i = 0; i < K * R * S * T * C; ++i) {
     h_F[i] = 1;
   }
   float* h_I = (float *)malloc(sizeof(float) * K * M * P * Q * N);
   // device memory
   cudaMalloc((void**)&d_I, sizeof(float) * C * D * H * W * N);
-  cudaMalloc((void**)&d_F, sizeof(float) * K * R * S * T);
+  cudaMalloc((void**)&d_F, sizeof(float) * K * R * S * T * C);
   cudaMalloc((void**)&d_O, sizeof(float) * K * M * P * Q * N);
   // memcpy h_O, h_F
   cudaMemcpy(d_O, h_O, sizeof(float) * M * P * Q * K * N,
     cudaMemcpyHostToDevice);
-  cudaMemcpy(d_F, h_F, sizeof(float) * K * R * S * T,
+  cudaMemcpy(d_F, h_F, sizeof(float) * K * R * S * T * C,
     cudaMemcpyHostToDevice);
   // load kernels 
   if (!load_kernels("./")) {

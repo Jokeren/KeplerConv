@@ -45,8 +45,7 @@ __global__ void sconv_bprop_C64_N64 (
     int param_shift_str_h,
     int param_magic_str_d,
     int param_shift_str_d
-)
-{
+) {
     __shared__ float share[64 * 8 * 4 + 8];
 
     int tid = threadIdx.x;

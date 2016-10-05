@@ -1,15 +1,41 @@
 # Kernel: sconv_bprop_C64_N64
+// debug:
+// mode1
+//-:-:-:-:00 MOV tmp_param0, param_test[0];
+//-:-:-:-:00 MOV tmp_param1, param_test[1];
+//-:-:-:-:00 SHL tmp_shl, tid, 0x2;
+//-:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
+//-:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
+//-:-:-:-:00 I2F.F32.U32 rst, rst;
+//-:-:-:-:00 ST.E [tmp_param00], rst;
+//-:-:-:-:00 EXIT;
+
+// mode2
+//-:-:-:-:00 MOV tmp_param0, param_test[0];
+//-:-:-:-:00 MOV tmp_param1, param_test[1];
+//
+//-:-:-:-:00 MOV32I k, 0x40000000;
+//-:-:-:-:00 ST.E [tmp_param0], k;
+//-:-:-:-:00 EXIT;
+
 // modify steps:
 // XMAD->IMAD
-// addr_zero->RZ
+// shared memory addresses->RZ
 // LDG->LD
 // LEA->MOV, IADD, SHL
 // XMAD.LO2C->IMAD.U32.U32
 // XMAD.PSL->IMAD.U32.U32
 // VMAD->IMAD, IADD
 // MOV->MOV32I
+// IADD3->IADD, IADD
+// POPC
+// ST.CG->ST
 // control code
 // comments
+// LDS.U->LDS
+// register<0-7>->register<0-3>, register<4-7>
+// avoid register conflicts
+// tid->other register
 
 <CONSTANT_MAPPING>
     addr_zero  : 4x<64*8*4 + 0>
@@ -74,7 +100,7 @@
 
     64-67 : mpq<0-3>
     64-67 : m, p, q, tidY
-    68-71 ~ tid, blkF, blkI, blkMPQ
+    68-70 : blkF, blkI, blkMPQ
     72-95 ~ tid1, tidX
     72-107 ~ str_d, str_h, str_w, pq, mask_shr, rst, lutStore, lutStore2, warp_count, mt, pr, qs, dep_thd_mask, dep_thd_bits, dep_thd_cnt, t, r, s, rs, x, y, z, one, rst_prime, x_prime, y_prime, z_prime, ballot, warp_slices, partial, endCRST
 
@@ -97,11 +123,15 @@
     114-115 : sliceIF<0-1>
 
       96-99 : trackI<0-1>, trackF<0-1>
-    100-115 : loadI<0-7>,  loadF<0-7>,
+    100-103 : loadI<0-3>
+    104-107 : loadF<0-3>
+    108-111 : loadI<4-7>
+    112-115 : loadF<4-7>
 
     116-125 ~ writeS, offsetIn, offsetFk, posCRST, posCRSTf, channel, lutSize, lutSizeRcp, lutOffset, offsetI
     126-127 ~ readFs, readIs
-    128-135 ~ tmp_data, tmp_shl, tmp_param0, tmp_param1, p_and
+    128-133 : tmp_data, tmp_shl, tmp_param0, tmp_param1, p_and, tid 
+    134-135 : tmp_param0<0-1>
 
     72-79  : cs<0-7>
     80-81  : Out<0-1>
@@ -119,7 +149,7 @@
 -:-:-:-:00 STS.128 [RZ + addr_zero], RZ;
 
 <CODE>
-    return join '', map sprintf("-:-:-:-:00 LDS.U.128 czero%02d, [RZ + addr_zero];\n", $_ * 4), 0..15;
+    return join '', map sprintf("-:-:-:-:00 LDS.128 czero%02d, [RZ + addr_zero];\n", $_ * 4), 0..15;
 </CODE>
 
 // tidX = (tid & 7) << 2
@@ -179,7 +209,7 @@
 -:-:-:-:00 @P1 IADD q, -q, param_Q;
 -:-:-:-:00 @P1 IADD q, q, dep_thd_mask;
 
--:-:-:-:00 STS.128 [addr_m], m;
+-:-:-:-:00 STS.128 [RZ + addr_m], m;
 
 // qs = q - S + pad_w + 1
 -:-:-:-:00 MOV32I   one, 1;
@@ -299,7 +329,7 @@ LUT_LOOP:
 -:-:-:-:00 @P0 BRA.U LUT_LOOP;
 
 // Share the lut size with the other warp
--:-:-:-:00 STS [addr_szLut], lutSize;
+-:-:-:-:00 STS [RZ + addr_szLut], lutSize;
 
 END_SETUP:
 
@@ -307,7 +337,7 @@ END_SETUP:
 
 // Grab the caclulated lut size and get it's reciprical
 // Get the total reduction depth
--:-:-:-:00 LDS lutSize, [addr_szLut];
+-:-:-:-:00 LDS lutSize, [RZ + addr_szLut];
 -:-:-:-:00 IMAD endCRST, lutSize, param_C, RZ;
 -:-:-:-:00 I2F.F32.S32 lutSizeRcp, lutSize;
 -:-:-:-:00 MUFU.RCP lutSizeRcp, lutSizeRcp;
@@ -339,7 +369,7 @@ END_SETUP:
 -:-:-:-:00 IMAD      offsetFc, channel, param_KRST, RZ;
 // posCRST -= partial
 -:-:-:-:00 IADD posCRST, posCRST, -partial;
--:-:-:-:00 @P1 LDS.U.64 sliceIF, [lutOffset + addr_lut];
+-:-:-:-:00 @P1 LDS.64 sliceIF, [lutOffset + addr_lut];
 
 // trackI = offsetIN + offsetIC + sliceI + param_I
 -:-:-:-:00 @P1 IADD offsetF, offsetFk, offsetFc;
@@ -365,13 +395,13 @@ END_SETUP:
 
 -:-:-:-:00 @P1 LD.E.CI.128 loadF0, [trackF + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.CI.128 loadF4, [trackF + 4x<32>];
--:-:-:-:00 @!P1 LDS.U.128 loadF0, [RZ + addr_zero];
--:-:-:-:00 @!P1 LDS.U.128 loadF4, [RZ + addr_zero];
+-:-:-:-:00 @!P1 LDS.128 loadF0, [RZ + addr_zero];
+-:-:-:-:00 @!P1 LDS.128 loadF4, [RZ + addr_zero];
 
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.128 loadI4, [trackI + 4x<32>];
--:-:-:-:00 @!P1 LDS.U.128 loadI0, [RZ + addr_zero];
--:-:-:-:00 @!P1 LDS.U.128 loadI4, [RZ + addr_zero];
+-:-:-:-:00 @!P1 LDS.128 loadI0, [RZ + addr_zero];
+-:-:-:-:00 @!P1 LDS.128 loadI4, [RZ + addr_zero];
 
 -:-:-:-:00 ISETP.GE.AND P1, PT, posCRST, RZ, PT;
 
@@ -386,10 +416,10 @@ END_SETUP:
 -:-:-:-:00 BAR.SYNC 0;
 -:-:-:-:00 LOP.XOR writeS, writeS, 4x<64*8*2>;
 
--:-:-:-:00 LDS.U.128 j0Ix0, [readIs + 4x<0*64 + 00>];
--:-:-:-:00 LDS.U.128 j0Fy0, [readFs + 4x<0*64 + 00>];
--:-:-:-:00 LDS.U.128 j0Ix4, [readIs + 4x<0*64 + 32>];
--:-:-:-:00 LDS.U.128 j0Fy4, [readFs + 4x<0*64 + 32>];
+-:-:-:-:00 LDS.128 j0Ix0, [readIs + 4x<0*64 + 00>];
+-:-:-:-:00 LDS.128 j0Fy0, [readFs + 4x<0*64 + 00>];
+-:-:-:-:00 LDS.128 j0Ix4, [readIs + 4x<0*64 + 32>];
+-:-:-:-:00 LDS.128 j0Fy4, [readFs + 4x<0*64 + 32>];
 
 // channel = posCRST / lutSize
 -:-:-:-:00 @P1 FMUL channel, posCRSTf, lutSizeRcp;
@@ -405,7 +435,7 @@ END_SETUP:
 -:-:-:-:00 @P1 IMAD      offsetFc, channel, param_KRST, RZ;
 
 -:-:-:-:00 IADD posCRST, posCRST, -8;
--:-:-:-:00 @P1 LDS.U.64 sliceIF, [lutOffset + addr_lut];
+-:-:-:-:00 @P1 LDS.64 sliceIF, [lutOffset + addr_lut];
 
 // trackI = offsetIN + offsetIC + sliceI + param_I
 -:-:-:-:00 @P1 IADD offsetF, offsetFk, offsetFc;
@@ -454,7 +484,7 @@ LOOP:
         j1c37 => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<0*64 +  0>], loadF0;\n",
         j1c39 => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<0*64 + 32>], loadF4;\n",
 
-        j1c62 => "-:-:-:-:00 \@P1 LDS.U.64 sliceIF, [lutOffset + addr_lut];\n",
+        j1c62 => "-:-:-:-:00 \@P1 LDS.64 sliceIF, [lutOffset + addr_lut];\n",
 
         j2c10 => "-:-:-:-:00 \@P1 IMAD offsetFc, channel, param_KRST, RZ;\n",
         j2c15 => "-:-:-:-:00 \@P1 IMAD offsetIc, channel, param_DHWN, RZ;\n",
@@ -515,10 +545,10 @@ LOOP:
         my $rsOffset = ($j + 1) % 8;
         my $rsPred   = $j == 7 ? '@P0' : '   ';
 
-        $insert{"j${j}c0"} = sprintf "-:-:-:-:00 %s LDS.U.128 j%dIx0, [readIs + 4x<%d*64 + 00>];\n", $rsPred, $nOdd, $rsOffset;
-        $insert{"j${j}c2"} = sprintf "-:-:-:-:00 %s LDS.U.128 j%dFy0, [readFs + 4x<%d*64 + 00>];\n", $rsPred, $nOdd, $rsOffset;
-        $insert{"j${j}c4"} = sprintf "-:-:-:-:00 %s LDS.U.128 j%dIx4, [readIs + 4x<%d*64 + 32>];\n", $rsPred, $nOdd, $rsOffset;
-        $insert{"j${j}c6"} = sprintf "-:-:-:-:00 %s LDS.U.128 j%dFy4, [readFs + 4x<%d*64 + 32>];\n", $rsPred, $nOdd, $rsOffset;
+        $insert{"j${j}c0"} = sprintf "-:-:-:-:00 %s LDS.128 j%dIx0, [readIs + 4x<%d*64 + 00>];\n", $rsPred, $nOdd, $rsOffset;
+        $insert{"j${j}c2"} = sprintf "-:-:-:-:00 %s LDS.128 j%dFy0, [readFs + 4x<%d*64 + 00>];\n", $rsPred, $nOdd, $rsOffset;
+        $insert{"j${j}c4"} = sprintf "-:-:-:-:00 %s LDS.128 j%dIx4, [readIs + 4x<%d*64 + 32>];\n", $rsPred, $nOdd, $rsOffset;
+        $insert{"j${j}c6"} = sprintf "-:-:-:-:00 %s LDS.128 j%dFy4, [readFs + 4x<%d*64 + 32>];\n", $rsPred, $nOdd, $rsOffset;
 
         foreach my $c (0 .. 63)
         {
@@ -535,7 +565,7 @@ LOOP:
 
 </CODE>
 
--:-:-:-:00 LDS.U.128 mpq, [addr_m];
+-:-:-:-:00 LDS.128 mpq, [RZ + addr_m];
 -:-:-:-:00 S2R tid,  SR_TID.X;
 -:-:-:-:00 S2R blkI, SR_CTAID.Z;
 -:-:-:-:00 S2R blkF, SR_CTAID.Y;
@@ -643,12 +673,12 @@ STORE_C:
 // Warp shuffle to drop the awkward readAs/readBs mapping
 -:-:-:-:00 STS.128 [writeCs + 4x<00>], cs0;
 -:-:-:-:00 STS.128 [writeCs + 4x<32>], cs4;
--:-:-:-:00 LDS.U.128 cs0, [readCs + 4x<00>];
--:-:-:-:00 LDS.U.128 cs4, [readCs + 4x<32>];
+-:-:-:-:00 LDS.128 cs0, [readCs + 4x<00>];
+-:-:-:-:00 LDS.128 cs4, [readCs + 4x<32>];
 
 // Store results back to global
--:-:-:-:00 @P2 ST.E.CG.128 [Out + 4x<00>], cs0;
--:-:-:-:00 @P3 ST.E.CG.128 [Out + 4x<32>], cs4;
+-:-:-:-:00 @P2 ST.E.128 [Out + 4x<00>], cs0;
+-:-:-:-:00 @P3 ST.E.128 [Out + 4x<32>], cs4;
 
 -:-:-:-:00 IADD   Out0.CC, Out0, MPQN1;
 -:-:-:-:00 IADD.X Out1,    Out1, RZ;

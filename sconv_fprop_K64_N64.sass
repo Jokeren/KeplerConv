@@ -20,7 +20,7 @@
 
 // modify steps:
 // XMAD->IMAD
-// addr_zero->RZ
+// shared memory addresses->RZ
 // LDG->LD
 // LEA->MOV, IADD, SHL
 // XMAD.LO2C->IMAD.U32.U32
@@ -29,11 +29,10 @@
 // MOV->MOV32I
 // IADD3->IADD, IADD
 // POPC
-// STG->ST
+// ST.CG->ST
 // control code
 // comments
 // LDS.U->LDS
-// trunc error!!!!!
 // register<0-7>->register<0-3>, register<4-7>
 // avoid register conflicts
 
@@ -676,16 +675,6 @@ STORE_C:
 -:-:-:-:00 ISETP.LT.AND P2, PT, k, param_K, P0; // k < K && n +  0 < N
 -:-:-:-:00 ISETP.LT.AND P3, PT, k, param_K, P1; // k < K && n + 32 < N
 -:-:-:-:00 IADD k, k, 1;
-
-// Apply relu
--:-:-:-:00 @P5 FMNMX cs0, cs0, RZ, !PT;
--:-:-:-:00 @P5 FMNMX cs1, cs1, RZ, !PT;
--:-:-:-:00 @P5 FMNMX cs2, cs2, RZ, !PT;
--:-:-:-:00 @P5 FMNMX cs3, cs3, RZ, !PT;
--:-:-:-:00 @P5 FMNMX cs4, cs4, RZ, !PT;
--:-:-:-:00 @P5 FMNMX cs5, cs5, RZ, !PT;
--:-:-:-:00 @P5 FMNMX cs6, cs6, RZ, !PT;
--:-:-:-:00 @P5 FMNMX cs7, cs7, RZ, !PT;
 
 // Warp shuffle to drop the awkward readAs/readBs mapping
 -:-:-:-:00 STS.128 [writeCs + 4x<00>], cs0;
