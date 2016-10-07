@@ -63,7 +63,7 @@ bool update(const float *I, float *F, const float *O,
     &grid_P, &grid_Q, &grid_PQ};
   int gridX = grid_PQM;
   int gridY = CRST / 128 + (CRST % 128 != 0);
-  int gridZ = N / 64 + (N % 64 != 0);
+  int gridZ = K / 128 + (K % 128 != 0);
   CUresult res = cuLaunchKernel(nervana_kernels[kernel_name], gridX, gridY, gridZ, 256, 1, 1,
     R * S * T * 4 * 2, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
@@ -93,7 +93,7 @@ bool update(const float *I, float *F, const float *O,
 int main() {
   cudaFree(0);
   float *d_I, *d_F, *d_O;
-  unsigned int N = 64, C = 1, K = 128, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
+  unsigned int N = 64, C = 128, K = 128, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
   unsigned int str_d = 1, str_h = 1, str_w = 1;
   unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;

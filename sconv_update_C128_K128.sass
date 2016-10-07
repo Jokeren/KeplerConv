@@ -38,10 +38,10 @@
 // avoid register conflicts
 
 <CONSTANT_MAPPING>
-    addr_zero : 4x<(128*16 + 32)*4 + 0>
-    addr_m    : 4x<(128*16 + 32)*4 + 4>
-    addr_q    : 4x<(128*16 + 32)*4 + 5>
-    szBuf     : (128*16 + 32)
+    addr_zero : 4x<(128 * 16 + 32) * 4 + 0>
+    addr_m    : 4x<(128 * 16 + 32) * 4 + 4>
+    addr_q    : 4x<(128 * 16 + 32) * 4 + 5>
+    szBuf     : (128 * 16 + 32)
 
     param_test[0]   : c[0x0][0x140]
     param_test[1]   : c[0x0][0x144]
@@ -95,7 +95,7 @@
 
 <REGISTER_MAPPING>
 
-    0-63    : czero<00-63>
+    0-63 : czero<00-63>
 
      3, 2,11,10,19,18,27,26 : cx<0-7>y0
      7, 6,15,14,23,22,31,30 : cx<0-7>y1
@@ -106,11 +106,11 @@
     33,32,41,40,49,48,57,56 : cx<0-7>y6
     37,36,45,44,53,52,61,60 : cx<0-7>y7
 
-    64-67   ~ blkI, blkE
-    68-111  ~ tidX, tidY, tid1, tid7, tid128, shiftX, blkMPQ, pq, m
+    64-67 ~ blkI, blkE
+    68-111 ~ tidX, tidY, tid1, tid7, tid128, shiftX, blkMPQ, pq, m
 
-    64-95   ~ tidYY, mm, mt, pr, y, z, y0, yH, z0, zD, bounds_yz, c, r, t, rs, rst
-    64-95   ~ qs, x, x0, xW, bounds_x, ti, te, Q
+    64-95 ~ tidYY, mm, mt, pr, y, z, y0, yH, z0, zD, bounds_yz, c, r, t, rs, rst
+    64-95 ~ qs, x, x0, xW, bounds_x, ti, te, Q
 
     64-67 : j0Ex<0-3>
     68-71 : j0Iy<0-3>
@@ -129,7 +129,7 @@
     112-115 : trackI<0-1>, trackE<0-1>
 
     116-124 ~ writeS, loopN, e, i, p, q, k, crst, s
-    125-127 ~ swapBuf, readIs, readEs
+    125-127 : swapBuf, readIs, readEs
     128-129 : tmp_data, tmp_shl
     130-131 : tmp_param0, tmp_param1
     132 : p_and
@@ -142,13 +142,16 @@
 </REGISTER_MAPPING>
 
 -:-:-:-:00 S2R tid,    SR_TID.X;
--:-:-:-:00 S2R blkMPQ, SR_CTAID.X;
--:-:-:-:00 S2R blkI,   SR_CTAID.Y;
--:-:-:-:00 S2R blkE,   SR_CTAID.Z;
+-:-:-:-:00 S2R blkMPQ, SR_CTAID.X; // M
+-:-:-:-:00 S2R blkI,   SR_CTAID.Y; // CRST / 128
+-:-:-:-:00 S2R blkE,   SR_CTAID.Z; // K / 128
 
-// tidX   = tid >> 1
-// tidY   = (tid & 1) << 2
+// tidX = tid >> 1
+// tidX = 0 : 1 : 128
+// tidY = (tid & 1) << 2
+// tidY = 0, 4
 // shiftX = (tid & 1) << 4
+// shiftX = 0, 16
 -:-:-:-:00 LOP.AND tid1,   tid,  1;
 -:-:-:-:00 SHR.U32 tidX,   tid,  1;
 -:-:-:-:00 SHL     tidY,   tid1, 2;
@@ -164,14 +167,19 @@
 
 // m  = blkMPQ / PQ
 // pq = blkMPQ % PQ
+// m = 0 : 1 : M - 1;
+// PQ = 1;
+// pq = 0
 -:-:-:-:00 IMAD.U32.U32 m, blkMPQ, param_magic_PQ, RZ;
--:-:-:-:00 SHR.U32   m, m,      param_shift_PQ;
+-:-:-:-:00 SHR.U32   m, m, param_shift_PQ;
 -:-:-:-:00 IMAD pq,  m, param_grid_PQ, RZ;
 -:-:-:-:00 IADD pq, -pq, blkMPQ;
 // p = pq / Q
 // q = pq % Q
+// p = 0
+// q = 0
 -:-:-:-:00 IMAD.U32.U32 p, pq, param_magic_Q, RZ;
--:-:-:-:00 SHR.U32   p, p,  param_shift_Q;
+-:-:-:-:00 SHR.U32   p, p, param_shift_Q;
 -:-:-:-:00 IMAD  q,  p, param_grid_Q, RZ;
 -:-:-:-:00 IADD  q, -q, pq;
 
@@ -180,18 +188,24 @@
 -:-:-:-:00 STS [RZ + addr_m], m;
 -:-:-:-:00 STS [RZ + addr_q], q;
 
-// writeBs = (tidY*128 + tidX + shiftX) * 4
+// tidX = 0 : 1 : 128
+// tidY = 0, 4
+// shiftX = 0, 16
+// writeS <= (512 + 128 + 16) * 4
+// writeS = (tidY * 128 + tidX + shiftX) * 4 + szBuf * 8
 -:-:-:-:00 ISCADD writeS, tidY, tidX, 7;
 -:-:-:-:00 IADD   writeS, writeS, shiftX;
 -:-:-:-:00 ISCADD writeS, writeS, 4x<szBuf * 2>, 2;
 
 // readIs = (((tid & 0x70) >> 3) | (tid & 1)) << 4
+// [6][5][4][0] * 16;
 -:-:-:-:00 LOP.AND readIs, tid,    0x70;
 -:-:-:-:00 SHR.U32 readIs, readIs, 3;
 -:-:-:-:00 LOP.OR  readIs, readIs, tid1;
 -:-:-:-:00 SHL     readIs, readIs, 4;
 
 // readEs = ((tid128 >> 4) | ((tid >> 1) & 7)) << 4 + szBuf;
+// [7][3][2][1] * 16 + szBuf * 4;
 -:-:-:-:00 LOP.AND tid128, tid,    128;
 -:-:-:-:00 BFE.U32 tid7,   tid,    0x301; // 3 bits at position 1
 -:-:-:-:00 SHR.U32 readEs, tid128, 4;
@@ -200,16 +214,18 @@
 
 -:-:-:-:00 MOV32I swapBuf, -4x<szBuf * 2>;
 
-// crst = blockI*128 + tid
+// crst = blockI * 128 + tidX
 -:-:-:-:00 ISCADD crst, blkI, tidX, 7;
 
-// k = blockE*128 + tid
+// k = blockE * 128 + tidX
 -:-:-:-:00 ISCADD k, blkE, tidX, 7;
--:-:-:-:00 MOV loopN, param_N;
 
+// loopN = N 
+-:-:-:-:00 MOV loopN, param_N;
 
 NEXT_P:
 
+// tidYY = 0 : 1 : 255
 -:-:-:-:00 S2R tidYY, SR_TID.X;
 -:-:-:-:00 LDS mm, [RZ + addr_m];
 -:-:-:-:00 LDS q, [RZ + addr_q];
@@ -220,7 +236,7 @@ NEXT_P:
 -:-:-:-:00 SHR.U32   c, c, param_shift_RST;
 -:-:-:-:00 IMAD rst, c, param_RST, RZ;
 -:-:-:-:00 IADD rst, -rst, crst;
-// t =  rst / RS
+// t  = rst / RS
 // rs = rst % RS
 -:-:-:-:00 IMAD.U32.U32 t, rst, param_magic_RS, RZ;
 -:-:-:-:00 SHR.U32   t, t, param_shift_RS;
@@ -229,24 +245,25 @@ NEXT_P:
 // r = rs / S
 // s = rs % S
 -:-:-:-:00 IMAD.U32.U32 r, rs, param_magic_S, RZ;
--:-:-:-:00 SHR.U32   r, r, param_shift_S;
+-:-:-:-:00 SHR.U32 r, r, param_shift_S;
 -:-:-:-:00 IMAD s, r, param_S, RZ;
 -:-:-:-:00 IADD s, -s, rs;
 // y = p * u - pad_h + r
 // z = m * w - pad_d + t
--:-:-:-:00 IMAD  pr, p,   param_str_h, RZ;
--:-:-:-:00 IMAD  mt, mm,  param_str_d, RZ;
--:-:-:-:00 IADD y, pr,  -param_pad_h;
+-:-:-:-:00 IMAD pr, p,  param_str_h, RZ;
+-:-:-:-:00 IMAD mt, mm, param_str_d, RZ;
+-:-:-:-:00 IADD y, pr, -param_pad_h;
 -:-:-:-:00 IADD y, y, r;
--:-:-:-:00 IADD z, mt,  -param_pad_d;
+-:-:-:-:00 IADD z, mt, -param_pad_d;
 -:-:-:-:00 IADD z, z, t;
-// e = k*MPQN + m*PQN + p*QN + tidYY
+// e = k * MPQN + m * PQN + p * QN + tidYY
+// tidYY = 0, 4
 -:-:-:-:00 LOP.AND tidYY, tidYY, 1;
 -:-:-:-:00 SHL     tidYY, tidYY, 2;
--:-:-:-:00 IMAD.U32.U32 e, p,  param_QN,   tidYY;
--:-:-:-:00 IMAD.U32.U32 e, mm, param_PQN,  e;
+-:-:-:-:00 IMAD.U32.U32 e, p,  param_QN, tidYY;
+-:-:-:-:00 IMAD.U32.U32 e, mm, param_PQN, e;
 -:-:-:-:00 IMAD.U32.U32 e, k,  param_MPQN, e;
-// i = c*DHWN + z*HWN + y*WN + tidYY
+// i = c * DHWN + z * HWN + y * WN + tidYY
 -:-:-:-:00 IMAD.U32.U32 i, y, param_WN,   tidYY;
 -:-:-:-:00 IMAD.U32.U32 i, z, param_HWN,  i;
 -:-:-:-:00 IMAD.U32.U32 i, c, param_DHWN, i;
@@ -264,6 +281,7 @@ NEXT_P:
 -:-:-:-:00 ISETP.LT.AND P4, PT, crst, param_CRST, PT;
 -:-:-:-:00 ISETP.EQ.AND P4, PT, bounds_yz, RZ, P4;
 // p += grid_P
+// p = p + 1
 -:-:-:-:00 IADD p, p, param_grid_P;
 
 -:-:-:-:00 ISETP.LT.AND P6, PT, p, param_P, PT;
@@ -272,18 +290,21 @@ NEXT_Q:
 
 // Zigzag q but only if grid_P < P
 -:-:-:-:00 LOP.AND p_and, p, 1;
+// useless?
 -:-:-:-:00 ISETP.NE.AND P1, PT, RZ, p, PT;
+// Q = 1
 -:-:-:-:00 MOV Q, param_grid_P;
+// 1 < param_P ? Q = -1 + -q + paramQ : Q = 0
 -:-:-:-:00 ISETP.LT.AND P1, PT, Q, param_P, P1;
 -:-:-:-:00 MOV32I Q, -1;
--:-:-:-:00 @P1 IADD Q, -q, param_Q;
--:-:-:-:00 @P1 IADD Q, Q, Q;
+-:-:-:-:00 @P1 IADD tmp_data, -q, param_Q;
+-:-:-:-:00 @P1 IADD Q, tmp_data, Q;
 -:-:-:-:00 @!P1 MOV Q, q;
 // k < K
 -:-:-:-:00 ISETP.LT.AND P3, PT, k, param_K, PT;
 // qs = q * v - pad_w
 // x = qs + s
--:-:-:-:00 IMAD  qs, Q,  param_str_w, RZ;
+-:-:-:-:00 IMAD qs, Q, param_str_w, RZ;
 -:-:-:-:00 IADD x, qs, -param_pad_w;
 -:-:-:-:00 IADD x, x, s;
 // bounds_x = x < 0 || x > W ? -1 : 0
@@ -292,7 +313,7 @@ NEXT_Q:
 -:-:-:-:00 LOP.OR bounds_x, x0, xW;
 // doLoad = crst < CRST && bounds_yz == 0 && bounds_x == 0
 -:-:-:-:00 ISETP.EQ.AND P2, PT, bounds_x, RZ, P4;
-// trackI = I + i + x*N
+// trackI = I + i + x * N
 -:-:-:-:00 IMAD ti, x, param_N, i;
 //-:-:-:-:00 LEA      trackI0.CC, ti, param_I[0],     2;
 //-:-:-:-:00 LEA.HI.X trackI1,    ti, param_I[1], RZ, 2;
@@ -301,7 +322,7 @@ NEXT_Q:
 -:-:-:-:00 SHL tmp_shl, ti, 0x2;
 -:-:-:-:00 IADD trackI0.CC, tmp_shl, tmp_param0;
 -:-:-:-:00 IADD.X trackI1, RZ, tmp_param1;
-// trackE = E + e + q*N
+// trackE = E + e + q * N
 -:-:-:-:00 IMAD te, Q, param_N, e;
 //-:-:-:-:00 LEA      trackE0.CC, te, param_E[0],     2;
 //-:-:-:-:00 LEA.HI.X trackE1,    te, param_E[1], RZ, 2;
@@ -311,6 +332,7 @@ NEXT_Q:
 -:-:-:-:00 IADD trackE0.CC, tmp_shl, tmp_param0;
 -:-:-:-:00 IADD.X trackE1, RZ, tmp_param1;
 // q += grid_Q
+// q = q + 1
 -:-:-:-:00 IADD q, q, param_grid_Q;
 -:-:-:-:00 ISETP.LT.AND P5, PT, q, param_Q, PT;
 
