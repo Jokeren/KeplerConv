@@ -188,17 +188,25 @@
 -:-:-:-:00 STS [RZ + addr_m], m;
 -:-:-:-:00 STS [RZ + addr_q], q;
 
-// tidX = 0 : 1 : 128
+// tidX = 0 : 1 : 127
 // tidY = 0, 4
 // shiftX = 0, 16
 // writeS <= (512 + 128 + 16) * 4
+// if tidY > 512, shiftX = 16
 // writeS = (tidY * 128 + tidX + shiftX) * 4 + szBuf * 8
+//      --------------------
+//      --------------------
+// 0, 4 --------------------
+// tidY --------------------
+//      ---- tidX = 0 : 1 : 127
+
 -:-:-:-:00 ISCADD writeS, tidY, tidX, 7;
 -:-:-:-:00 IADD   writeS, writeS, shiftX;
 -:-:-:-:00 ISCADD writeS, writeS, 4x<szBuf * 2>, 2;
 
 // readIs = (((tid & 0x70) >> 3) | (tid & 1)) << 4
 // [6][5][4][0] * 16;
+// readIs = 0 : 4 : 63
 -:-:-:-:00 LOP.AND readIs, tid,    0x70;
 -:-:-:-:00 SHR.U32 readIs, readIs, 3;
 -:-:-:-:00 LOP.OR  readIs, readIs, tid1;
@@ -206,6 +214,7 @@
 
 // readEs = ((tid128 >> 4) | ((tid >> 1) & 7)) << 4 + szBuf;
 // [7][3][2][1] * 16 + szBuf * 4;
+// readEs = 0 : 4 : 63
 -:-:-:-:00 LOP.AND tid128, tid,    128;
 -:-:-:-:00 BFE.U32 tid7,   tid,    0x301; // 3 bits at position 1
 -:-:-:-:00 SHR.U32 readEs, tid128, 4;
@@ -236,6 +245,7 @@ NEXT_P:
 -:-:-:-:00 SHR.U32   c, c, param_shift_RST;
 -:-:-:-:00 IMAD rst, c, param_RST, RZ;
 -:-:-:-:00 IADD rst, -rst, crst;
+
 // t  = rst / RS
 // rs = rst % RS
 -:-:-:-:00 IMAD.U32.U32 t, rst, param_magic_RS, RZ;
@@ -267,6 +277,15 @@ NEXT_P:
 -:-:-:-:00 IMAD.U32.U32 i, y, param_WN,   tidYY;
 -:-:-:-:00 IMAD.U32.U32 i, z, param_HWN,  i;
 -:-:-:-:00 IMAD.U32.U32 i, c, param_DHWN, i;
+// mode1
+// -:-:-:-:00 MOV tmp_param0, param_test[0];
+// -:-:-:-:00 MOV tmp_param1, param_test[1];
+// -:-:-:-:00 SHL tmp_shl, tid, 0x2;
+// -:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
+// -:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
+// -:-:-:-:00 I2F.F32.U32 i, i;
+// -:-:-:-:00 ST.E [tmp_param00], i;
+// -:-:-:-:00 EXIT;
 // bounds_yz = y < 0 || y > H || z < 0 || z > D ? -1 : 0
 -:-:-:-:00 ISET.LT.AND y0, y, RZ, PT;
 -:-:-:-:00 ISET.GE.AND yH, y, param_H, PT;
@@ -275,6 +294,7 @@ NEXT_P:
 -:-:-:-:00 LOP.OR bounds_yz, y0, yH;
 -:-:-:-:00 LOP.OR bounds_yz, bounds_yz, z0;
 -:-:-:-:00 LOP.OR bounds_yz, bounds_yz, zD;
+
 -:-:-:-:00 ISETP.GT.AND P4, PT, bounds_yz, RZ, PT;
 -:-:-:-:00 @P4 MOV32I bounds_yz, 0xfe;
 // doLoadCRST = crst < CRST && bounds_yz == 0
@@ -381,7 +401,7 @@ NEXT_Q:
 
 -:-:-:-:00 IADD.X trackI1, trackI1, RZ;
 
--:-:-:-:00 IADD   trackE0.CC, trackE0, 4x<16>;
+-:-:-:-:00 IADD trackE0.CC, trackE0, 4x<16>;
 
 -:-:-:-:00 IADD readEs,  readEs, -swapBuf;
 -:-:-:-:00 IADD readIs,  readIs, -swapBuf;

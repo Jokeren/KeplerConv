@@ -1,11 +1,12 @@
+#include <stdio.h>
 extern "C"
-__global__ void __launch_bounds__(256) sconv_update_C128_K128
+__global__ void sconv_update_C128_K128
 (
-    float*        param_F,
-    const float*  param_I,
-    const float*  param_E,
+    float* param_test,
+    float* param_F,
+    const float* param_I,
+    const float* param_E,
     float param_alpha,
-    int param_flags,
     int param_N,
     int param_K,
     int param_D,
@@ -44,13 +45,13 @@ __global__ void __launch_bounds__(256) sconv_update_C128_K128
     int param_part_P,
     int param_part_Q,
     int param_part_PQ
-)
-{
-    __shared__ float share[(128*16 + 32)*4 + 6];
+) {
+    __shared__ float share[(128 * 16 + 32) * 4 + 6];
 
     int tid = threadIdx.x;
 
     share[tid] = 1;
 
-    *param_F = share[255-tid];
+    *param_F = share[255 - tid];
+    *param_test = share[255 - tid];
 }
