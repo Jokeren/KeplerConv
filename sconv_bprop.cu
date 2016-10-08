@@ -160,7 +160,7 @@ bool bprop_C64_N64(float *I, const float *F, const float *O,
   int gridX = gridMPQ;
   int gridY = CRST / 32 + (CRST % 32 != 0);
   int gridZ = N / 64 + (N % 64 != 0);
-  std::string kernel_name = "sconv_bprop_C32_N64";
+  std::string kernel_name = "sconv_bprop_C1_N64";
   CUresult res = cuLaunchKernel(nervana_kernels[kernel_name], gridX, gridY, gridZ, 32, 1, 1,
     0, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
     std::cerr << "Couldn't load all kernels" << std::endl;
     exit(1);
   }
-  if (C % 32 == 0) {
+  if (C % 64 != 0) {
     // launch kernel C32
     if (!bprop_C32_N64(d_I, d_F, d_O, N, C, K, D, H, W, R, S, T, M, P, Q, str_d, str_h, str_w, pad_d, pad_h, pad_w)) {
       std::cerr << "Launch error C32" << std::endl;

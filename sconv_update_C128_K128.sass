@@ -36,6 +36,7 @@
 // LOP3
 // register<0-7>->register<0-3>, register<4-7>
 // avoid register conflicts
+// PT: 0xffffff
 
 <CONSTANT_MAPPING>
     addr_zero : 4x<(128 * 16 + 32) * 4 + 0>
@@ -294,9 +295,6 @@ NEXT_P:
 -:-:-:-:00 LOP.OR bounds_yz, y0, yH;
 -:-:-:-:00 LOP.OR bounds_yz, bounds_yz, z0;
 -:-:-:-:00 LOP.OR bounds_yz, bounds_yz, zD;
-
--:-:-:-:00 ISETP.GT.AND P4, PT, bounds_yz, RZ, PT;
--:-:-:-:00 @P4 MOV32I bounds_yz, 0xfe;
 // doLoadCRST = crst < CRST && bounds_yz == 0
 -:-:-:-:00 ISETP.LT.AND P4, PT, crst, param_CRST, PT;
 -:-:-:-:00 ISETP.EQ.AND P4, PT, bounds_yz, RZ, P4;
