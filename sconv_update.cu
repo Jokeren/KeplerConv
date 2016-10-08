@@ -1,7 +1,5 @@
 #include "sconv.h"
 
-std::string kernel_name = "sconv_update_C128_K128";
-
 bool update(const float *I, float *F, const float *O,
   unsigned int N, unsigned int C, unsigned int K,
   unsigned int D, unsigned int H, unsigned int W,
@@ -65,6 +63,7 @@ bool update(const float *I, float *F, const float *O,
   int gridX = grid_PQM;
   int gridY = CRST / 128 + (CRST % 128 != 0);
   int gridZ = K / 128 + (K % 128 != 0);
+  std::string kernel_name = "sconv_update_C128_K128";
   CUresult res = cuLaunchKernel(nervana_kernels[kernel_name], gridX, gridY, gridZ, 256, 1, 1,
     0, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
@@ -73,10 +72,6 @@ bool update(const float *I, float *F, const float *O,
   }
   cuCtxSynchronize();
   float* h_test = (float *)malloc(sizeof(float) * 256);
-  for (int i = 0; i < 256; ++i) {
-    std::cout << h_test[i] << " ";
-  }
-  std::cout << std::endl;
   cuda_error = cudaMemcpy(h_test, test_param, sizeof(float) * 256, cudaMemcpyDeviceToHost);
   if (cuda_error != cudaSuccess) {
     std::cerr << "Line " << __LINE__ << " memcpy error: " << cuda_error << std::endl;

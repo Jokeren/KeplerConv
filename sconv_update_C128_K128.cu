@@ -1,7 +1,5 @@
-#include <stdio.h>
 extern "C"
-__global__ void sconv_update_C128_K128
-(
+__global__ void sconv_update_C128_K128 (
     float* param_test,
     float* param_F,
     const float* param_I,
@@ -44,14 +42,13 @@ __global__ void sconv_update_C128_K128
     int param_shift_PQ,
     int param_part_P,
     int param_part_Q,
-    int param_part_PQ
-) {
-    __shared__ float share[(128 * 16 + 32) * 4 + 6];
+    int param_part_PQ) {
+      __shared__ float share[(128 * 16 + 32) * 4 + 6];
 
-    int tid = threadIdx.x;
+      int tid = threadIdx.x;
 
-    share[tid] = 1;
+      share[tid] = 1;
 
-    *param_F = share[255 - tid];
-    *param_test = share[255 - tid];
-}
+      *param_F = share[255 - tid];
+      *param_test = share[255 - tid];
+    }
