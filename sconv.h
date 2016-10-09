@@ -54,15 +54,17 @@ void magic64(unsigned int d, unsigned int& magic, unsigned int& shift) {
 bool load_kernels(const char* const base_path_cstr) {
     //better would be a vector<string>, but there is a bug in nvcc that prevents this
     // (bug report filed)
-    std::string names[3] = {
+    const int NUM_KERNELS = 4;
+    std::string names[NUM_KERNELS] = {
         "sconv_fprop_K64_N64",
         "sconv_bprop_C64_N64",
+        "sconv_bprop_C1_N64",
         "sconv_update_C128_K128"
     };
 
     std::string base_path(base_path_cstr);
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < NUM_KERNELS; ++i) {
       std::string kernel = names[i];
         if (nervana_kernels.count(kernel) > 0)
             continue;

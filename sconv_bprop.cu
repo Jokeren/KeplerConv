@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
   cudaFree(0);
   // params
   float *d_I, *d_F, *d_O;
-  unsigned int N = 64, C = 3, K = 64, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
+  unsigned int N = 64, C = 3, K = 128, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
   unsigned int str_d = 1, str_h = 1, str_w = 1;
   unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;
@@ -224,9 +224,9 @@ int main(int argc, char** argv) {
     exit(1);
   }
   if (C % 64 != 0) {
-    // launch kernel C32
+    // launch kernel C1
     if (!bprop_C1_N64(d_I, d_F, d_O, N, C, K, D, H, W, R, S, T, M, P, Q, str_d, str_h, str_w, pad_d, pad_h, pad_w)) {
-      std::cerr << "Launch error C32" << std::endl;
+      std::cerr << "Launch error C1" << std::endl;
       exit(1);
     }
   } else {
