@@ -1,4 +1,4 @@
-# Kernel: sconv_bprop_C32_N64
+# Kernel: sconv_bprop_C1_N64
 
 // debug:
 // mode1
@@ -601,20 +601,28 @@ STORE_C:
 -:-:-:-:00 SHR.U32 c08, c08, param_shift_RST;
 -:-:-:-:00 SHR.U32 c12, c12, param_shift_RST;
 
--:-:-:-:00 VMAD.U16.U16 lut00, -c00, RST, crst00;
--:-:-:-:00 VMAD.U16.U16 lut04, -c04, RST, crst04;
--:-:-:-:00 VMAD.U16.U16 lut08, -c08, RST, crst08;
--:-:-:-:00 VMAD.U16.U16 lut12, -c12, RST, crst12;
+//-:-:-:-:00 VMAD.U16.U16 lut00, -c00, RST, crst00;
+-:-:-:-:00 IMAD lut00, -c00, RST, RZ;
+-:-:-:-:00 IADD lut00, lut00, crst00;
+//-:-:-:-:00 VMAD.U16.U16 lut04, -c04, RST, crst04;
+-:-:-:-:00 IMAD lut04, -c04, RST, RZ;
+-:-:-:-:00 IADD lut04, lut04, crst04;
+//-:-:-:-:00 VMAD.U16.U16 lut08, -c08, RST, crst08;
+-:-:-:-:00 IMAD lut08, -c08, RST, RZ;
+-:-:-:-:00 IADD lut08, lut08, crst08;
+//-:-:-:-:00 VMAD.U16.U16 lut12, -c12, RST, crst12;
+-:-:-:-:00 IMAD lut12, -c12, RST, RZ;
+-:-:-:-:00 IADD lut12, lut12, crst12;
 
 -:-:-:-:00 SHL lut00, lut00, 2;
 -:-:-:-:00 SHL lut04, lut04, 2;
 -:-:-:-:00 SHL lut08, lut08, 2;
 -:-:-:-:00 SHL lut12, lut12, 2;
 
--:-:-:-:00 IMAD.LO2 chan00, DHWN1, c00, RZ;
--:-:-:-:00 IMAD.LO2 chan04, DHWN1, c04, RZ;
--:-:-:-:00 IMAD.LO2 chan08, DHWN1, c08, RZ;
--:-:-:-:00 IMAD.LO2 chan12, DHWN1, c12, RZ;
+-:-:-:-:00 IMAD.U32.U32 chan00, DHWN1, c00, RZ;
+-:-:-:-:00 IMAD.U32.U32 chan04, DHWN1, c04, RZ;
+-:-:-:-:00 IMAD.U32.U32 chan08, DHWN1, c08, RZ;
+-:-:-:-:00 IMAD.U32.U32 chan12, DHWN1, c12, RZ;
 
 -:-:-:-:00 IADD crst00, crst00, 1;
 -:-:-:-:00 IADD crst04, crst04, 1;

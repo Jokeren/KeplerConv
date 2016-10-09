@@ -1,6 +1,6 @@
 #include "sconv.h"
 
-bool bprop_C32_N64(float *I, const float *F, const float *O,
+bool bprop_C64_N64(float *I, const float *F, const float *O,
   unsigned int N, unsigned int C, unsigned int K,
   unsigned int D, unsigned int H, unsigned int W,
   unsigned int R, unsigned int S, unsigned int T,
@@ -95,7 +95,7 @@ bool bprop_C32_N64(float *I, const float *F, const float *O,
   return true;
 }
 
-bool bprop_C64_N64(float *I, const float *F, const float *O,
+bool bprop_C1_N64(float *I, const float *F, const float *O,
   unsigned int N, unsigned int C, unsigned int K,
   unsigned int D, unsigned int H, unsigned int W,
   unsigned int R, unsigned int S, unsigned int T,
@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
   cudaFree(0);
   // params
   float *d_I, *d_F, *d_O;
-  unsigned int N = 64, C = 64, K = 3, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
+  unsigned int N = 64, C = 3, K = 64, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
   unsigned int str_d = 1, str_h = 1, str_w = 1;
   unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;
@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
   }
   if (C % 64 != 0) {
     // launch kernel C32
-    if (!bprop_C32_N64(d_I, d_F, d_O, N, C, K, D, H, W, R, S, T, M, P, Q, str_d, str_h, str_w, pad_d, pad_h, pad_w)) {
+    if (!bprop_C1_N64(d_I, d_F, d_O, N, C, K, D, H, W, R, S, T, M, P, Q, str_d, str_h, str_w, pad_d, pad_h, pad_w)) {
       std::cerr << "Launch error C32" << std::endl;
       exit(1);
     }

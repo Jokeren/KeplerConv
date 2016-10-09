@@ -1,5 +1,5 @@
 extern "C"
-__global__ void sconv_bprop_C32_N64 (
+__global__ void sconv_bprop_C1_N64 (
     float* param_test,
     float* param_I,
     const float*  param_F,
@@ -41,12 +41,12 @@ __global__ void sconv_bprop_C32_N64 (
     int param_shift_PQ,
     int param_CRST8,
     int param_MPQN8) {
-      __shared__ float share[32 * 8 * 2 + 64 * 8 * 2];
+      __shared__ float shared[32 * 8 * 2 + 64 * 8 * 2];
 
       int tid = threadIdx.x;
 
-      share[tid] = 1;
+      shared[tid] = 1;
 
-      *param_I = share[31 - tid];
+      *param_I = shared[31 - tid];
       *param_test = shared[31 - tid];
     }
