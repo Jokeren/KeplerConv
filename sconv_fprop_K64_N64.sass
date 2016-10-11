@@ -91,9 +91,8 @@
 
     64-67 : mpq<0-3>
     64-67 : m, p, q, tidY
-    68-70 : blkF, blkI, blkMPQ
-    72-95 ~ tid1, tidX
-    72-107 ~ pq, mask_shr, rst, lutStore, lutStore2, warp_count, mt, pr, qs, dep_thd_mask, dep_thd_bits, dep_thd_cnt, t, r, s, rs, x, y, z, ballot, warp_slices, partial, endCRST
+    68-72 : blkF, blkI, blkMPQ, tid1, tidX
+    73-99 ~ pq, mask_shr, rst, lutStore, lutStore2, warp_count, mt, pr, qs, dep_thd_mask, dep_thd_bits, dep_thd_cnt, t, r, s, rs, x, y, z, ballot, warp_slices, partial, endCRST
 
     0-63 : czero<00-63>
 
@@ -115,7 +114,7 @@
     88-91 : j1Ix<4-7>
     92-95 : j1Fy<4-7>
 
-    108-113 ~ offsetF, offsetIc, offsetFc
+    136-139 ~ offsetF, offsetIc, offsetFc
     140-141 : sliceI, sliceF
     140-141 : sliceIF<0-1>
 
@@ -136,8 +135,8 @@
     133 : tid
     134-135 : tmp_param0<0-1>
 
-    72-79   : cs<0-7>
-    80-81   : Out<0-1>
+    72-79 : cs<0-7>
+    80-81 : Out<0-1>
 
     82-125  ~ writeCs, readCs, alpha, tidOX, tidOY, to, k, n, MPQN1, MPQN28, MPQN, MPQN4
 
@@ -201,7 +200,6 @@
 -:-:-:-:00 BFE.U32 readIs, tid,    0x301; // 3 bits at position 1
 -:-:-:-:00 ISCADD  readIs, readIs, 4x<8*64>, 4;
 
-
 -:-:-:-:00 @P0 BRA.U END_SETUP;
 
 -:-:-:-:00 MOV rst,        tid;
@@ -249,7 +247,6 @@
 -:-:-:-:00 IADD    mask_shr, -tid, 32;
 -:-:-:-:00 SHR.U32 dep_thd_mask, dep_thd_mask, mask_shr;
 
-
 LUT_LOOP:
 
 // warp synchronous loop while warp_count < RST
@@ -289,7 +286,7 @@ LUT_LOOP:
 // -------------- K * rst --------------
 // --------------         --------------
 // --------------         --------------
--:-:-:-:00 IMAD      sliceI, x, param_N,   RZ;
+-:-:-:-:00 IMAD sliceI, x, param_N,   RZ;
 -:-:-:-:00 IMAD.U32.U32 sliceI, y, param_WN, sliceI;
 -:-:-:-:00 IMAD.U32.U32 sliceI, z, param_HWN, sliceI;
 
@@ -370,12 +367,11 @@ END_SETUP:
 
 // offsetIC = channel * DHWN
 // offsetFC = channel * K
--:-:-:-:00 @P1 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;
--:-:-:-:00 @P1 IMAD offsetFc, channel, param_KRST, RZ;
+-:-:-:-:00 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;
+-:-:-:-:00 IMAD offsetFc, channel, param_KRST, RZ;
 // posCRST -= partial
 -:-:-:-:00 IADD posCRST, posCRST, -partial;
 -:-:-:-:00 @P1 LDS.64 sliceIF, [lutOffset + addr_lut];
-
 
 // trackF = offsetFK + offsetFC + sliceF + param_F
 -:-:-:-:00 @P1 IADD offsetF, offsetFk, offsetFc;
@@ -683,8 +679,8 @@ STORE_C:
 -:-:-:-:00 LDS.128 cs4, [readCs + 4x<32>];
 
 // Store results back to global
--:-:-:-:00 @P2 ST.E.CG.128 [Out + 4x<00>], cs0;
--:-:-:-:00 @P3 ST.E.CG.128 [Out + 4x<32>], cs4;
+-:-:-:-:00 @P2 ST.E.128 [Out + 4x<00>], cs0;
+-:-:-:-:00 @P3 ST.E.128 [Out + 4x<32>], cs4;
 
 -:-:-:-:00 IADD   Out0.CC, Out0, MPQN1;
 -:-:-:-:00 IADD.X Out1,    Out1, RZ;

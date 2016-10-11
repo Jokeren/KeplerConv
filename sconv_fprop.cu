@@ -80,7 +80,7 @@ int main() {
   cudaFree(0);
   // params
   float *d_I, *d_F, *d_O;
-  unsigned int N = 64, C = 3, K = 64, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
+  unsigned int N = 64, C = 1, K = 64, D = 1, H = 28, W = 28, T = 1, R = 5, S = 5;
   unsigned int str_d = 1, str_h = 1, str_w = 1;
   unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;
@@ -90,8 +90,10 @@ int main() {
   Q = (W - S + 2 * pad_w) / str_w + 1;
   // host memory
   float *h_I = (float *)malloc(C * D * H * W * N * sizeof(float));
-  for (int i = 0; i < C * D * H * W * N; ++i) {
-    h_I[i] = 1;
+  for (int i = 0; i < C * D * H * W; ++i) {
+    for (int j = 0; j < N; ++j) {
+      h_I[i * N + j] = j;
+    }
   }
   float *h_F = (float *)malloc(C * R * S * T * K * sizeof(float));
   for (int i = 0; i < C * R * S * T * K; ++i) {
@@ -123,7 +125,7 @@ int main() {
     std::cerr << "Line " << __LINE__ << " memcpy error: " << cuda_error << std::endl;
     exit(1);
   }
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 3900; i < 4000; ++i) {
     std::cout << h_O[i] << " ";
   }
   std::cout << std::endl;
