@@ -212,22 +212,22 @@
 -:-:-:-:00 STS.128 [RZ + addr_m], m;
 
 // qs = q - S + pad_w + 1
--:-:-:-:00 MOV32I   one, 1;
--:-:-:-:00 IADD  qs, q, -param_S;
--:-:-:-:00 IADD  qs, qs, param_pad_w;
--:-:-:-:00 IADD  qs, qs, one;
+-:-:-:-:00 MOV32I one, 1;
+-:-:-:-:00 IADD qs, q, -param_S;
+-:-:-:-:00 IADD qs, qs, param_pad_w;
+-:-:-:-:00 IADD qs, qs, one;
 
 // pr = p - R + pad_h + 1
--:-:-:-:00 IADD  pr, p, -param_R;
--:-:-:-:00 IADD  pr, pr, param_pad_h;
--:-:-:-:00 IADD  pr, pr, one;
+-:-:-:-:00 IADD pr, p, -param_R;
+-:-:-:-:00 IADD pr, pr, param_pad_h;
+-:-:-:-:00 IADD pr, pr, one;
 
 // mt = m - T + pad_d + 1
--:-:-:-:00 IADD  mt, m, -param_T;
--:-:-:-:00 IADD  mt, mt, param_pad_d;
--:-:-:-:00 IADD  mt, mt, one;
+-:-:-:-:00 IADD mt, m, -param_T;
+-:-:-:-:00 IADD mt, mt, param_pad_d;
+-:-:-:-:00 IADD mt, mt, one;
 
--:-:-:-:00 IADD    mask_shr, -tid, 32;
+-:-:-:-:00 IADD mask_shr, -tid, 32;
 -:-:-:-:00 SHR.U32 dep_thd_mask, dep_thd_mask, mask_shr;
 
 LUT_LOOP:
@@ -238,15 +238,15 @@ LUT_LOOP:
 // t =  rst / RS
 // rs = rst % RS
 -:-:-:-:00 IMAD.U32.U32 t, rst, param_magic_RS, RZ;
--:-:-:-:00 SHR.U32   t, t, param_shift_RS;
--:-:-:-:00 IMAD  rs, t, param_RS, RZ;
--:-:-:-:00 IADD  rs, -rs, rst;
+-:-:-:-:00 SHR.U32 t, t, param_shift_RS;
+-:-:-:-:00 IMAD rs, t, param_RS, RZ;
+-:-:-:-:00 IADD rs, -rs, rst;
 // r = rs / S
 // s = rs % S
 -:-:-:-:00 IMAD.U32.U32 r, rs, param_magic_S, RZ;
--:-:-:-:00 SHR.U32   r, r, param_shift_S;
--:-:-:-:00 IMAD   s, r, param_S, RZ;
--:-:-:-:00 IADD   s, -s, rs;
+-:-:-:-:00 SHR.U32 r, r, param_shift_S;
+-:-:-:-:00 IMAD s, r, param_S, RZ;
+-:-:-:-:00 IADD s, -s, rs;
 // x = qs + s
 // y = pr + r
 // z = mt + t
@@ -260,11 +260,9 @@ LUT_LOOP:
 // s = S - s - 1
 -:-:-:-:00 IADD s, -s, param_S;
 -:-:-:-:00 IADD s, s, -one;
-
 // r = R - r - 1
 -:-:-:-:00 IADD r, -r, param_R;
 -:-:-:-:00 IADD r, r, -one;
-
 // t = T - t - 1
 -:-:-:-:00 IADD t, -t, param_T;
 -:-:-:-:00 IADD t, t, -one;
@@ -367,7 +365,7 @@ END_SETUP:
 // offsetIC = channel * DHWN
 // offsetFC = channel * K
 -:-:-:-:00 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;
--:-:-:-:00 IMAD      offsetFc, channel, param_KRST, RZ;
+-:-:-:-:00 IMAD offsetFc, channel, param_KRST, RZ;
 // posCRST -= partial
 -:-:-:-:00 IADD posCRST, posCRST, -partial;
 -:-:-:-:00 @P1 LDS.64 sliceIF, [lutOffset + addr_lut];
@@ -381,18 +379,18 @@ END_SETUP:
 
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
--:-:-:-:00 MOV tmp_param0, param_F[0];
--:-:-:-:00 MOV tmp_param1, param_F[1];
--:-:-:-:00 SHL tmp_shl, offsetF, 0x2;
--:-:-:-:00 IADD trackF0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 IADD.X trackF1, RZ, tmp_param1;
+-:-:-:-:00 @P1 MOV tmp_param0, param_F[0];
+-:-:-:-:00 @P1 MOV tmp_param1, param_F[1];
+-:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
+-:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
--:-:-:-:00 MOV tmp_param0, param_I[0];
--:-:-:-:00 MOV tmp_param1, param_I[1];
--:-:-:-:00 SHL tmp_shl, offsetI, 0x2;
--:-:-:-:00 IADD trackI0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 IADD.X trackI1, RZ, tmp_param1;
+-:-:-:-:00 @P1 MOV tmp_param0, param_I[0];
+-:-:-:-:00 @P1 MOV tmp_param1, param_I[1];
+-:-:-:-:00 @P1 SHL tmp_shl, offsetI, 0x2;
+-:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackI1, RZ, tmp_param1;
 
 -:-:-:-:00 @P1 LD.E.CI.128 loadF0, [trackF + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.CI.128 loadF4, [trackF + 4x<32>];
@@ -446,18 +444,18 @@ END_SETUP:
 -:-:-:-:00 @P1 IADD offsetI, offsetI, sliceI;
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
--:-:-:-:00 MOV tmp_param0, param_F[0];
--:-:-:-:00 MOV tmp_param1, param_F[1];
--:-:-:-:00 SHL tmp_shl, offsetF, 0x2;
--:-:-:-:00 IADD trackF0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 IADD.X trackF1, RZ, tmp_param1;
+-:-:-:-:00 @P1 MOV tmp_param0, param_F[0];
+-:-:-:-:00 @P1 MOV tmp_param1, param_F[1];
+-:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
+-:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
--:-:-:-:00 MOV tmp_param0, param_I[0];
--:-:-:-:00 MOV tmp_param1, param_I[1];
--:-:-:-:00 SHL tmp_shl, offsetI, 0x2;
--:-:-:-:00 IADD trackI0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 IADD.X trackI1, RZ, tmp_param1;
+-:-:-:-:00 @P1 MOV tmp_param0, param_I[0];
+-:-:-:-:00 @P1 MOV tmp_param1, param_I[1];
+-:-:-:-:00 @P1 SHL tmp_shl, offsetI, 0x2;
+-:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackI1, RZ, tmp_param1;
 -:-:-:-:00 @P1 LD.E.CI.128 loadF0, [trackF + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.CI.128 loadF4, [trackF + 4x<32>];
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
@@ -494,11 +492,11 @@ LOOP:
         j2c29 => "-:-:-:-:00 \@P1 IADD offsetF, offsetFk, offsetFc;\n".
                  "-:-:-:-:00 \@P1 IADD offsetF, offsetF, sliceF;\n",
 
-        j2c34 => "-:-:-:-:00 MOV tmp_param0, param_F[0];\n".
-                 "-:-:-:-:00 MOV tmp_param1, param_F[1];\n".
-                 "-:-:-:-:00 SHL tmp_shl, offsetF, 0x2;\n".
-                 "-:-:-:-:00 IADD trackF0.CC, tmp_shl, tmp_param0;\n".
-                 "-:-:-:-:00 IADD.X trackF1, RZ, tmp_param1;\n",
+        j2c34 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_F[0];\n".
+                 "-:-:-:-:00 \@P1 MOV tmp_param1, param_F[1];\n".
+                 "-:-:-:-:00 \@P1 SHL tmp_shl, offsetF, 0x2;\n".
+                 "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, tmp_param0;\n".
+                 "-:-:-:-:00 \@P1 IADD.X trackF1, RZ, tmp_param1;\n",
 
         j2c36 => "-:-:-:-:00 \@P1 IADD offsetI, offsetIn, offsetIc;\n".
                  "-:-:-:-:00 \@P1 IADD offsetI, offsetI, sliceI;\n",
@@ -509,11 +507,11 @@ LOOP:
         j6c8  => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<8*64 +  0>], loadI0;\n",
         j6c10 => "-:-:-:-:00 \@P0 STS.128 [writeS + 4x<8*64 + 32>], loadI4;\n",
 
-        j6c55 => "-:-:-:-:00 MOV tmp_param0, param_I[0];\n".
-                 "-:-:-:-:00 MOV tmp_param1, param_I[1];\n".
-                 "-:-:-:-:00 SHL tmp_shl, offsetI, 0x2;\n".
-                 "-:-:-:-:00 IADD trackI0.CC, tmp_shl, tmp_param0;\n".
-                 "-:-:-:-:00 IADD.X trackI1, RZ, tmp_param1;\n",
+        j6c55 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_I[0];\n".
+                 "-:-:-:-:00 \@P1 MOV tmp_param1, param_I[1];\n".
+                 "-:-:-:-:00 \@P1 SHL tmp_shl, offsetI, 0x2;\n".
+                 "-:-:-:-:00 \@P1 IADD trackI0.CC, tmp_shl, tmp_param0;\n".
+                 "-:-:-:-:00 \@P1 IADD.X trackI1, RZ, tmp_param1;\n",
 
         j6c62 => "-:-:-:-:00 \@P0 BAR.SYNC 0;\n" .
                  "-:-:-:-:00 \@P0 LOP.XOR readIs, readIs, 4x<64*8*2>;\n" .
