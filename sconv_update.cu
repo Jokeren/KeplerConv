@@ -89,9 +89,9 @@ bool update(const float *I, float *F, const float *O,
 int main() {
   cudaFree(0);
   float *d_I, *d_F, *d_O;
-  unsigned int N = 128, C = 128, K = 128, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
-  unsigned int str_d = 1, str_h = 1, str_w = 1;
-  unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
+  unsigned int N = 128, C = 3, K = 128, D = 1, H = 224, W = 224, T = 1, R = 11, S = 11;
+  unsigned int str_d = 1, str_h = 4, str_w = 4;
+  unsigned int pad_d = 0, pad_h = 3, pad_w = 3;
   unsigned int M, P, Q;
   cudaError_t cuda_error;
   M = (D - T + 2 * pad_d) / str_d + 1;

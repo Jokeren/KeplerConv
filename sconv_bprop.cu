@@ -160,7 +160,7 @@ bool bprop_C1_N64(float *I, const float *F, const float *O,
   int gridX = gridMPQ;
   int gridY = CRST / 32 + (CRST % 32 != 0);
   int gridZ = N / 64 + (N % 64 != 0);
-  std::string kernel_name = "sconv_bprop_C1_N64";
+  const std::string kernel_name = "sconv_bprop_C1_N64";
   CUresult res = cuLaunchKernel(nervana_kernels[kernel_name], gridX, gridY, gridZ, 32, 1, 1,
     0, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
@@ -188,9 +188,9 @@ int main(int argc, char** argv) {
   cudaFree(0);
   // params
   float *d_I, *d_F, *d_O;
-  unsigned int N = 64, C = 3, K = 128, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
-  unsigned int str_d = 1, str_h = 1, str_w = 1;
-  unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
+  unsigned int N = 128, C = 3, K = 64, D = 1, H = 224, W = 224, T = 1, R = 11, S = 11;
+  unsigned int str_d = 1, str_h = 4, str_w = 4;
+  unsigned int pad_d = 0, pad_h = 3, pad_w = 3;
   unsigned int M, P, Q;
   cudaError_t cuda_error;
   // 32 or 64
@@ -205,13 +205,13 @@ int main(int argc, char** argv) {
     h_O[i] = 1;
   }
   float *h_F = (float *)malloc(K * R * S * T * C * sizeof(float));
-  for (int i = 0; i < K * R * S * T * C; ++i) {
+  for (int i = 0; i < K * C * R * S * T; ++i) {
     h_F[i] = 1;
   }
   float* h_I = (float *)malloc(sizeof(float) * C * D * H * W * N);
   // device memory
   cudaMalloc((void**)&d_I, sizeof(float) * C * D * H * W * N);
-  cudaMalloc((void**)&d_F, sizeof(float) * K * R * S * T * C);
+  cudaMalloc((void**)&d_F, sizeof(float) * K * R * S * T * C * 2);
   cudaMalloc((void**)&d_O, sizeof(float) * K * M * P * Q * N);
   // memcpy h_O, h_F
   cudaMemcpy(d_O, h_O, sizeof(float) * M * P * Q * K * N,

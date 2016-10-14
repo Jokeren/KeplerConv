@@ -41,7 +41,7 @@ __global__ void sconv_bprop_C1_N64 (
     int param_shift_PQ,
     int param_CRST8,
     int param_MPQN8) {
-      __shared__ float shared[32 * 8 * 2 + 64 * 8 * 2];
+      __shared__ float shared[64 * 8 * 4 * 2];
 
       int tid = threadIdx.x;
 
