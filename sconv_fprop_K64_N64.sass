@@ -225,6 +225,8 @@
 
 // if p is odd
 // set q = param_Q - q - 1
+// if p is even
+// q = q
 -:-:-:-:00 LOP.AND p_and, p, 1;
 -:-:-:-:00 ISETP.NE.AND P1, PT, p_and, RZ, PT;
 -:-:-:-:00 @P1 IADD q, -q, param_Q;
