@@ -37,7 +37,7 @@
 // avoid register conflicts
 
 // optimization steps:
-// alexnet1
+// alexnet2
 // initial->1200
 // bank conflict->1288
 // alignment+dual issue+reuse->1600
@@ -45,6 +45,7 @@
 // all ldg.128->1777
 // control codes->1900
 // scheduling->1937
+// reduce unnecessary instructions->2100
 
 <CONSTANT_MAPPING>
     addr_zero  : 4x<64*8*4 + 0>
@@ -144,6 +145,7 @@
     134-135 : sliceI, sliceF
     134-135 : sliceIF<0-1>
     136-139 ~ offsetF, offsetIc, offsetFc
+    140-143 ~ addressF0, addressF1, addressI0, addressI1
 
     72-79 : cs<0-7>
     80-81 : Out<0-1>
@@ -481,10 +483,10 @@ END_SETUP:
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.128 loadI4, [trackI + 4x<32>];
 
--:-:-:-:00 NOP;
--:-:-:-:00 NOP;
--:-:-:-:00 NOP;
--:-:-:-:00 NOP;
+-:-:-:-:00 MOV addressF0, param_F[0];
+-:-:-:-:00 MOV addressF1, param_F[1];
+-:-:-:-:00 MOV addressI0, param_I[0];
+-:-:-:-:00 MOV addressI1, param_I[1];
 -:-:-:-:00 NOP;
 
 LOOP:
@@ -499,17 +501,16 @@ LOOP:
         j0c63 => "-:-:-:-:00 \@P1 FFMA channel, channel, 5.9604644775390625e-08, channel;\n",
 
         j1c47 => "-:-:-:-:00 \@P1 F2I.S32.F32.TRUNC channel, channel;\n",
-        j1c53 => "-:-:-:-:00 \@P1 IMAD tmp_param0, channel, lutSize, RZ;\n",
+        j1c53 => "-:-:-:-:00 \@P1 IMAD lutOffset, -channel, lutSize, posCRST;\n",
 
-        j1c61 => "-:-:-:-:00 \@P1 IADD lutOffset, -tmp_param0, posCRST;\n",
-        j1c62 => "-:-:-:-:00 \@P1 IMAD offsetFc, channel, param_KRST, RZ;\n",
+        j1c62 => "-:-:-:-:00 \@P1 IMAD offsetF, channel, param_KRST, offsetFk;\n",
         j1c63 => "-:-:-:-:00 \@P1 SHL lutOffset, lutOffset, 3;\n".
-                 "-:-:-:-:00 \@P1 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;\n".
+                 "-:-:-:-:00 \@P1 IMAD.U32.U32 offsetI, channel, param_DHWN, offsetIn;\n".
                  "-:-:-:-:00 NOP;\n".
                  "-:G:D:-:00 \@P1 LDS.64 sliceIF, [lutOffset + addr_lut];\n".
                  "-:-:-:-:00 IADD posCRST, posCRST, -8;\n".
                  "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 \@P1 IADD offsetF, offsetFk, offsetFc;\n".
+                 "-:-:-:-:00 NOP;\n".
                  "-:-:-:-:00 NOP;\n",
 
         j2c53 => "-:-:-:-:00 TEXDEPBAR 0x0;\n",
@@ -517,16 +518,13 @@ LOOP:
         j2c62 => "-:-:D:S:00 \@P0 STS.128 [writeS + 4x<8*64 + 32>], loadI4;\n",
         j2c63 => "-:-:-:-:00 \@P1 IADD offsetF, offsetF, sliceF;\n",
 
-        j3c47 => "-:-:-:-:00 \@P1 IADD offsetI, offsetIn, offsetIc;\n",
         j3c53 => "-:-:-:-:00 \@P1 IADD offsetI, offsetI, sliceI;\n",
         j3c61 => "-:-:D:S:00 \@P0 STS.128 [writeS + 4x<0*64 +  0>], loadF0;\n",
         j3c62 => "-:-:D:S:00 \@P0 STS.128 [writeS + 4x<0*64 + 32>], loadF4;\n",
-        j3c63 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_F[0];\n",
 
         j4c47 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetF, 0x2;\n",
-        j4c53 => "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, tmp_param0;\n",
-        j4c61 => "-:-:-:-:00 \@P1 MOV tmp_param1, param_F[1];\n",
-        j4c62 => "-:-:-:-:00 \@P1 IADD.X trackF1, RZ, tmp_param1;\n",
+        j4c53 => "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, addressF0;\n",
+        j4c62 => "-:-:-:-:00 \@P1 IADD.X trackF1, RZ, addressF1;\n",
 
         j5c47 => "-:-:-:-:00 \@P1 IADD tmp_param0.CC, tmp_data, trackF0;\n",
         j5c53 => "-:-:-:-:00 \@P1 IADD.X tmp_param1, RZ, trackF1;\n",
@@ -534,15 +532,13 @@ LOOP:
         j5c61 => "-:G:D:-:00 \@P1 LDG.E.128 loadF0, [trackF + 4x< 0>];\n",
         j5c62 => "-:G:D:-:00 \@P1 LDG.E.128 loadF4, [tmp_param];\n",
 
-        j6c47 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_I[0];\n",
-        j6c53 => "-:-:-:-:00 \@P1 MOV tmp_param1, param_I[1];\n",
         j6c61 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetI, 0x2;\n",
 
-        j6c62 => "-:-:-:-:00 \@P1 IADD trackI0.CC, tmp_shl, tmp_param0;\n",
+        j6c62 => "-:-:-:-:00 \@P1 IADD trackI0.CC, tmp_shl, addressI0;\n",
         j6c63 => "T:-:D:S:00 \@P0 BAR.SYNC 0;\n".
                  "-:-:-:-:00 NOP;\n".
                  "-:-:-:-:00 \@P0 LOP.XOR readIs, readIs, 4x<64*8*2>;\n".
-                 "-:-:-:-:00 \@P1 IADD.X trackI1, RZ, tmp_param1;\n".
+                 "-:-:-:-:00 \@P1 IADD.X trackI1, RZ, addressI1;\n".
                  "-:-:-:-:00 \@P0 LOP.XOR readFs, readFs, 4x<64*8*2>;\n".
                  "-:-:-:-:00 \@P0 LOP.XOR writeS, writeS, 4x<64*8*2>;\n".
                  "-:-:-:-:00 \@P1 IADD tmp_param0.CC, tmp_data, trackI0;\n".
