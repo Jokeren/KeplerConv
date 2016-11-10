@@ -397,18 +397,18 @@ END_SETUP:
 
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
--:-:-:-:00 @P1 MOV tmp_param0, param_F[0];
--:-:-:-:00 @P1 MOV tmp_param1, param_F[1];
+-:-:-:-:00 MOV addressF0, param_F[0];
+-:-:-:-:00 MOV addressF1, param_F[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
--:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
+-:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, addressF0;
+-:-:-:-:00 @P1 IADD.X trackF1, RZ, addressF1;
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
--:-:-:-:00 @P1 MOV tmp_param0, param_I[0];
--:-:-:-:00 @P1 MOV tmp_param1, param_I[1];
+-:-:-:-:00 MOV addressI0, param_I[0];
+-:-:-:-:00 MOV addressI1, param_I[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetI, 0x2;
--:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 @P1 IADD.X trackI1, RZ, tmp_param1;
+-:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, addressI0;
+-:-:-:-:00 @P1 IADD.X trackI1, RZ, addressI1;
 
 -:-:-:-:00 @P1 LD.E.128 loadF0, [trackF + 4x<0>];
 -:-:-:-:00 @P1 LD.E.128 loadF4, [trackF + 4x<32>];
@@ -464,29 +464,22 @@ END_SETUP:
 
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
--:-:-:-:00 @P1 MOV tmp_param0, param_F[0];
--:-:-:-:00 @P1 MOV tmp_param1, param_F[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
--:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
+-:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, addressF0;
+-:-:-:-:00 @P1 IADD.X trackF1, RZ, addressF1;
 
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
--:-:-:-:00 @P1 MOV tmp_param0, param_I[0];
--:-:-:-:00 @P1 MOV tmp_param1, param_I[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetI, 0x2;
--:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, tmp_param0;
--:-:-:-:00 @P1 IADD.X trackI1, RZ, tmp_param1;
+-:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, addressI0;
+-:-:-:-:00 @P1 IADD.X trackI1, RZ, addressI1;
 
 -:-:-:-:00 @P1 LD.E.128 loadF0, [trackF + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.128 loadF4, [trackF + 4x<32>];
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.128 loadI4, [trackI + 4x<32>];
 
--:-:-:-:00 MOV addressF0, param_F[0];
--:-:-:-:00 MOV addressF1, param_F[1];
--:-:-:-:00 MOV addressI0, param_I[0];
--:-:-:-:00 MOV addressI1, param_I[1];
+-:-:-:-:00 NOP;
 -:-:-:-:00 NOP;
 
 LOOP:
