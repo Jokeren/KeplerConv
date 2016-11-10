@@ -115,14 +115,14 @@
   11, 14, 27, 30, 43, 46, 59, 62 : cx<0-7>y6
   15, 10, 31, 26, 47, 42, 63, 58 : cx<0-7>y7
 
-    64-67 : j0Fy<0-3>
-    68-71 : j0Ix<0-3>
-    72-75 : j0Fy<4-7>
-    76-79 : j0Ix<4-7>
-    80-83 : j1Fy<0-3>
-    84-87 : j1Ix<0-3>
-    88-91 : j1Fy<4-7>
-    92-95 : j1Ix<4-7>
+      64-67 : j0Fy<0-3>
+      68-71 : j0Ix<0-3>
+      72-75 : j0Fy<4-7>
+      76-79 : j0Ix<4-7>
+      80-83 : j1Fy<0-3>
+      84-87 : j1Ix<0-3>
+      88-91 : j1Fy<4-7>
+      92-95 : j1Ix<4-7>
 
       96-97 : trackI<0-1>
       98-99 : trackF<0-1>
@@ -135,7 +135,8 @@
     116-125 ~ writeS, offsetIn, offsetFk, posCRST, posCRSTf, channel, lutSize, lutSizeRcp, lutOffset, offsetI
     126-127 ~ readFs, readIs
 
-    128-129 : tmp_data, tmp_shl
+    128 : tmp_shl
+    129 : tmp_data
 
     130-131 : tmp_param<0-1>
     132 : p_and
@@ -501,17 +502,16 @@ LOOP:
         j1c53 => "-:-:-:-:00 \@P1 IMAD tmp_param0, channel, lutSize, RZ;\n",
 
         j1c61 => "-:-:-:-:00 \@P1 IADD lutOffset, -tmp_param0, posCRST;\n",
-        j1c62 => "-:-:-:-:00 \@P1 SHL lutOffset, lutOffset, 3;\n",
-        j1c63 => "-:G:D:-:01 \@P1 LDS.64 sliceIF, [lutOffset + addr_lut];\n".
-                 "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 \@P1 IMAD offsetFc, channel, param_KRST, RZ;\n".
-                 "-:-:-:-:00 NOP;\n".
+        j1c62 => "-:-:-:-:00 \@P1 IMAD offsetFc, channel, param_KRST, RZ;\n",
+        j1c63 => "-:-:-:-:00 \@P1 SHL lutOffset, lutOffset, 3;\n".
                  "-:-:-:-:00 \@P1 IMAD.U32.U32 offsetIc, channel, param_DHWN, RZ;\n".
                  "-:-:-:-:00 NOP;\n".
+                 "-:G:D:-:00 \@P1 LDS.64 sliceIF, [lutOffset + addr_lut];\n".
+                 "-:-:-:-:00 IADD posCRST, posCRST, -8;\n".
                  "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 IADD posCRST, posCRST, -8;\n",
+                 "-:-:-:-:00 \@P1 IADD offsetF, offsetFk, offsetFc;\n".
+                 "-:-:-:-:00 NOP;\n",
 
-        j2c47 => "-:-:-:-:00 \@P1 IADD offsetF, offsetFk, offsetFc;\n",
         j2c53 => "-:-:-:-:00 TEXDEPBAR 0x0;\n",
         j2c61 => "-:-:D:S:00 \@P0 STS.128 [writeS + 4x<8*64 +  0>], loadI0;\n",
         j2c62 => "-:-:D:S:00 \@P0 STS.128 [writeS + 4x<8*64 + 32>], loadI4;\n",
@@ -523,16 +523,16 @@ LOOP:
         j3c62 => "-:-:D:S:00 \@P0 STS.128 [writeS + 4x<0*64 + 32>], loadF4;\n",
         j3c63 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_F[0];\n",
 
-        j4c47 => "-:-:-:-:00 \@P1 MOV tmp_param1, param_F[1];\n",
-        j4c53 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetF, 0x2;\n",
-        j4c61 => "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, tmp_param0;\n",
+        j4c47 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetF, 0x2;\n",
+        j4c53 => "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, tmp_param0;\n",
+        j4c61 => "-:-:-:-:00 \@P1 MOV tmp_param1, param_F[1];\n",
         j4c62 => "-:-:-:-:00 \@P1 IADD.X trackF1, RZ, tmp_param1;\n",
 
-        j4c63 => "-:-:-:-:00 \@P1 IADD tmp_param0.CC, tmp_data, trackF0;\n",
-        j5c47 => "-:-:-:-:00 \@P1 IADD.X tmp_param1, RZ, trackF1;\n",
+        j5c47 => "-:-:-:-:00 \@P1 IADD tmp_param0.CC, tmp_data, trackF0;\n",
+        j5c53 => "-:-:-:-:00 \@P1 IADD.X tmp_param1, RZ, trackF1;\n",
 
-        j5c53 => "-:G:D:-:00 \@P1 LDG.E.128 loadF0, [trackF + 4x< 0>];\n",
-        j5c61 => "-:G:D:-:00 \@P1 LDG.E.128 loadF4, [tmp_param];\n",
+        j5c61 => "-:G:D:-:00 \@P1 LDG.E.128 loadF0, [trackF + 4x< 0>];\n",
+        j5c62 => "-:G:D:-:00 \@P1 LDG.E.128 loadF4, [tmp_param];\n",
 
         j6c47 => "-:-:-:-:00 \@P1 MOV tmp_param0, param_I[0];\n",
         j6c53 => "-:-:-:-:00 \@P1 MOV tmp_param1, param_I[1];\n",
@@ -546,11 +546,11 @@ LOOP:
                  "-:-:-:-:00 \@P0 LOP.XOR readFs, readFs, 4x<64*8*2>;\n".
                  "-:-:-:-:00 \@P0 LOP.XOR writeS, writeS, 4x<64*8*2>;\n".
                  "-:-:-:-:00 \@P1 IADD tmp_param0.CC, tmp_data, trackI0;\n".
-                 "-:-:-:-:00 \@P1 IADD.X tmp_param1, RZ, trackI1;\n",
+                 "-:-:-:-:00 NOP;\n",
 
-        j7c47 => "-:G:D:-:00 \@P1 LDG.E.128 loadI0, [trackI];\n",
-        j7c53 => "-:G:D:-:00 \@P1 LDG.E.128 loadI4, [tmp_param];\n",
-
+        j7c47 => "-:-:-:-:00 \@P1 IADD.X tmp_param1, RZ, trackI1;\n",
+        j7c61 => "-:G:D:-:00 \@P1 LDG.E.128 loadI0, [trackI];\n",
+        j7c62 => "-:G:D:-:00 \@P1 LDG.E.128 loadI4, [tmp_param];\n",
         j7c63 => "-:-:-:-:00 \@P0 BRA.U LOOP;\n",
     );
 
