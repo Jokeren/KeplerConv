@@ -6,7 +6,6 @@
 #include <sstream>
 #include <stdlib.h>
 #include <math.h>
-#include <cuda.h>
 
 std::map<std::string, CUfunction> nervana_kernels;
 std::vector<CUmodule> nervana_modules;
