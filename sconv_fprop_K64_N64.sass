@@ -171,7 +171,7 @@
 
 // tid <= 63
 // tidX = (tid & 7) << 2
-// tidX = 0 : 4 : 32
+// tidX = 0 : 8 : 255
 // tidY = tid >> 3
 // tidY = 0 : 1 : 7
 -:-:-:-:00 LOP.AND tidX, tid,  7;
@@ -182,17 +182,17 @@
 // K64
 // blkF ---- trackF
 //      tidX
--:-:-:-:00 ISCADD offsetFk, blkF, tidX, 6;
+-:-:-:-:00 ISCADD  offsetFk, blkF, tidX, 6;
 
 // offsetIn += blkI * 64 + tidX
 // N64
 // blkI ---- trackI
 //      tidX
--:-:-:-:00 ISCADD offsetIn, blkI, tidX, 6;
+-:-:-:-:00 ISCADD  offsetIn, blkI, tidX, 6;
 
 // writeS = (64 * tidY + tidX) * 4
 // tidY = 0 : 1 : 7
-// tidX = 0 : 4 : 32
+// tidX = 0 : 8 : 255
 // ----------------
 // ---------------- tidY 0 : 1 : 8
 // ---- writeS
@@ -480,7 +480,7 @@ END_SETUP:
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
 -:-:-:-:00 @P1 LD.E.128 loadI4, [trackI + 4x<32>];
 
--:-:-:-:00 SHL writeS, tid, 2;
+-:-:-:-:00 NOP;
 -:-:-:-:00 NOP;
 
 LOOP:
