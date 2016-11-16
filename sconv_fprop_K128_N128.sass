@@ -151,7 +151,6 @@
     134-135 : sliceIF<0-1>
     136-139 ~ offsetF, offsetIc, offsetFc
     140-143 ~ addressF0, addressF1, addressI0, addressI1
-    144-145 : tmp_param0<0-1>
 
     72-79 : cs<0-7>
     80-81 : Out<0-1>
@@ -164,15 +163,6 @@
 -:-:-:-:00 S2R blkF,   SR_CTAID.Y; #K128
 -:-:-:-:00 S2R blkI,   SR_CTAID.Z; #N128
 -:-:-:-:00 S2R blkMPQ, SR_CTAID.X; # m,p,q stored in x index
-
-//-:-:-:-:00 MOV tmp_param0, param_test[0];
-//-:-:-:-:00 MOV tmp_param1, param_test[1];
-//-:-:-:-:00 SHL tmp_shl, tid, 0x2;
-//-:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
-//-:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
-//-:-:-:-:00 I2F.F32.U32 tid, tid;
-//-:-:-:-:00 ST.E [tmp_param00], tid;
-//-:-:-:-:00 EXIT;
 
 // if tid > 32
 //    P0 = true
@@ -187,10 +177,19 @@
 // tidX = (tid & 31) << 2
 // tidX = 0 : 4 : 128
 // tidY = tid >> 5
-// tidY = 0 : 1 : 7
--:-:-:-:00 LOP.AND tidX, tid,  32;
+// tidY = 0 : 1 : 3
+-:-:-:-:00 LOP.AND tidX, tid,  31;
 -:-:-:-:00 SHL     tidX, tidX, 2;
 -:-:-:-:00 SHR.U32 tidY, tid,  5;
+
+//-:-:-:-:00 MOV tmp_param0, param_test[0];
+//-:-:-:-:00 MOV tmp_param1, param_test[1];
+//-:-:-:-:00 SHL tmp_shl, tid, 0x2;
+//-:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
+//-:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
+//-:-:-:-:00 I2F.F32.U32 tidY, tidY;
+//-:-:-:-:00 ST.E [tmp_param00], tidY;
+//-:-:-:-:00 EXIT;
 
 // offsetFk += blkF * 128 + tidX
 // K128
@@ -427,10 +426,10 @@ END_SETUP:
 -:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, addressI0;
 -:-:-:-:00 @P1 IADD.X trackI1, RZ, addressI1;
 
--:-:-:-:00 @P1 LD.E.128 loadF0, [trackF + 4x<0>];
+-:-:-:-:00 @P1 LD.E.128 loadF0, [trackF];
 -:-:-:-:00 @!P1 LDS.128 loadF0, [RZ + addr_zero];
 
--:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x<0>];
+-:-:-:-:00 @P1 LD.E.128 loadI0, [trackI];
 -:-:-:-:00 @!P1 LDS.128 loadI0, [RZ + addr_zero];
 
 -:-:-:-:00 ISETP.GE.AND P1, PT, posCRST, RZ, PT;
@@ -484,10 +483,9 @@ END_SETUP:
 -:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, addressI0;
 -:-:-:-:00 @P1 IADD.X trackI1, RZ, addressI1;
 
--:-:-:-:00 @P1 LD.E.128 loadF0, [trackF + 4x< 0>];
--:-:-:-:00 @P1 LD.E.128 loadI0, [trackI + 4x< 0>];
+-:-:-:-:00 @P1 LD.E.128 loadF0, [trackF];
+-:-:-:-:00 @P1 LD.E.128 loadI0, [trackI];
 
--:-:-:-:00 NOP;
 -:-:-:-:00 NOP;
 
 LOOP:
@@ -497,47 +495,45 @@ LOOP:
     (
         j0c47 => "-:-:-:-:00 ISETP.GE.AND P1, PT, posCRST,  RZ, PT;\n",
         j0c53 => "-:-:-:-:00 \@P1 I2F.F32.S32 posCRSTf, posCRST;\n",
-        j0c61 => "-:-:-:-:00 \@P1 FMUL channel, posCRSTf, lutSizeRcp;\n",
         j0c62 => "-:-:-:-:00 ISETP.GE.AND P0, PT, posCRST, -8, PT;\n",
+        j0c63 => "-:-:-:-:00 \@P1 FMUL channel, posCRSTf, lutSizeRcp;\n",
 
         j1c47 => "-:-:-:-:00 \@P1 FFMA channel, channel, 5.9604644775390625e-08, channel;\n",
-        j1c53 => "-:-:-:-:00 \@P1 F2I.S32.F32.TRUNC channel, channel;\n",
-        j1c61 => "-:-:-:-:00 \@P1 IMAD lutOffset, -channel, lutSize, posCRST;\n",
-        j1c62 => "-:-:-:-:00 \@P1 IMAD offsetF, channel, param_KRST, offsetFk;\n",
-        j1c63 => "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 \@P1 SHL lutOffset, lutOffset, 3;\n".
-                 "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 IADD posCRST, posCRST, -8;\n".
-                 "-:G:D:-:00 \@P1 LDS.64 sliceIF, [lutOffset + addr_lut];\n",
+        j1c63 => "-:-:-:-:00 \@P1 F2I.S32.F32.TRUNC channel, channel;\n",
 
-        j2c47 => "-:-:-:-:00 \@P1 IMAD.U32.U32 offsetI, channel, param_DHWN, offsetIn;\n",
-        j2c53 => "-:-:-:-:00 TEXDEPBAR 0x0;\n",
-        j2c61 => "-:-:-:-:00 \@P1 IADD offsetF, offsetF, sliceF;\n",
-        j2c62 => "-:-:D:S:00 \@P0 STS.128 [writeS + 4x<szShareF>], loadI0;\n",
+        j2c47 => "-:-:-:-:00 \@P1 IMAD lutOffset, -channel, lutSize, posCRST;\n",
+        j2c53 => "-:-:-:-:00 \@P1 IMAD offsetF, channel, param_KRST, offsetFk;\n",
+        j2c61 => "-:-:-:-:00 \@P1 IMAD offsetI, channel, param_DHWN, offsetIn;\n",
+        j2c62 => "-:-:-:-:00 \@P1 SHL lutOffset, lutOffset, 3;\n",
 
-        j3c47 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetF, 0x2;\n",
-        j3c53 => "-:-:-:-:00 \@P1 IADD offsetI, offsetI, sliceI;\n",
-        j3c61 => "-:-:D:S:00 \@P0 STS.128 [writeS], loadF0;\n",
-        j3c63 => "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, addressF0;\n",
+        j3c47 => "-:-:-:-:00 \@P1 LDS.64 sliceIF, [lutOffset + addr_lut];\n",
+        j3c53 => "-:-:-:-:00 TEXDEPBAR 0x0;\n",
+        j3c61 => "-:-:D:S:00 \@P0 STS.128 [writeS + 4x<szShareF>], loadI0;\n",
+        j3c62 => "-:-:D:S:00 \@P0 STS.128 [writeS], loadF0;\n",
+        j3c63 => "-:-:-:-:00 IADD posCRST, posCRST, -8;\n",
 
-        j4c47 => "-:-:-:-:00 \@P1 IADD.X trackF1, RZ, addressF1;\n",
+        j4c47 => "-:-:-:-:00 \@P1 IADD offsetF, offsetF, sliceF;\n",
+        j4c53 => "-:-:-:-:00 \@P1 IADD offsetI, offsetI, sliceI;\n",
+        j4c61 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetF, 0x2;\n",
+        j4c62 => "-:-:-:-:00 \@P1 IADD trackF0.CC, tmp_shl, addressF0;\n",
 
-        j5c47 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetI, 0x2;\n",
-
-        j5c61 => "-:-:-:-:00 \@P1 IADD trackI0.CC, tmp_shl, addressI0;\n",
-        j5c62 => "-:G:D:-:00 \@P1 LDG.E.128 loadF0, [trackF];\n",
+        j5c47 => "-:-:-:-:00 \@P1 IADD.X trackF1, RZ, addressF1;\n",
+        j5c53 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetI, 0x2;\n",
+        j5c62 => "-:-:-:-:00 \@P1 IADD trackI0.CC, tmp_shl, addressI0;\n",
 
         j6c47 => "-:-:-:-:00 \@P1 IADD.X trackI1, RZ, addressI1;\n",
-        j6c53 => "-:-:-:-:00 \@P0 LOP.XOR writeS, writeS, 4x<szShareF + szShareI>;\n",
+        j6c61 => "-:G:D:-:00 \@P1 LDG.E.128 loadI0, [trackI];\n",
+        j6c62 => "-:G:D:-:00 \@P1 LDG.E.128 loadF0, [trackF];\n",
+        j6c63 => "T:-:D:S:00 \@P0 BAR.SYNC 0;\n".
+                 "-:-:-:-:00 NOP;\n".
+                 "-:-:-:-:00 \@P0 LOP.XOR readIs, readIs, 4x<szShareF + szShareI>;\n".
+                 "-:-:-:-:00 NOP;\n".
+                 "-:-:-:-:00 NOP;\n".
+                 "-:-:-:-:00 \@P0 LOP.XOR readFs, readFs, 4x<szShareF + szShareI>;\n".
+                 "-:-:-:-:00 NOP;\n".
+                 "-:-:-:-:00 NOP;\n",
 
-        j6c61 => "-:-:-:-:00 \@P0 LOP.XOR readIs, readIs, 4x<szShareF + szShareI>;\n",
-        j6c62 => "-:-:-:-:00 \@P0 LOP.XOR readFs, readFs, 4x<szShareF + szShareI>;\n",
-        j6c63 => "T:-:D:S:00 \@P0 BAR.SYNC 0;\n",
-
-        j7c61 => "-:G:D:-:00 \@P1 LDG.E.128 loadI0, [trackI];\n",
+        j7c61 => "-:-:-:-:00 \@P0 LOP.XOR writeS, writeS, 4x<szShareF + szShareI>;\n",
         j7c63 => "-:-:-:-:00 \@P0 BRA.U LOOP;\n",
     );
 
@@ -661,7 +657,7 @@ LOOP:
 </CODE>
 
 -:-:-:-:00 LDS.128 mpq, [RZ + addr_m];
--:-:-:-:00 S2R tid,  SR_TID.X; // 0-64
+-:-:-:-:00 S2R tid,  SR_TID.X; // 0-127
 -:-:-:-:00 S2R blkI, SR_CTAID.Z; // N id
 -:-:-:-:00 S2R blkF, SR_CTAID.Y; // K id
 

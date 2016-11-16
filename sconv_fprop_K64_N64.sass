@@ -147,6 +147,7 @@
     134-135 : sliceIF<0-1>
     136-139 ~ offsetF, offsetIc, offsetFc
     140-143 ~ addressF0, addressF1, addressI0, addressI1
+    144-145 : tmp_param0<0-1>
 
     72-79 : cs<0-7>
     80-81 : Out<0-1>
@@ -482,6 +483,15 @@ END_SETUP:
 
 -:-:-:-:00 NOP;
 -:-:-:-:00 NOP;
+
+-:-:-:-:00 MOV tmp_param0, param_test[0];
+-:-:-:-:00 MOV tmp_param1, param_test[1];
+-:-:-:-:00 SHL tmp_shl, tid, 0x2;
+-:-:-:-:00 IADD tmp_param00.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 IADD.X tmp_param01, RZ, tmp_param1;
+-:-:-:-:00 I2F.F32.U32 posCRSTf, posCRST;
+-:-:-:-:00 ST.E [tmp_param00], posCRSTf;
+-:-:-:-:00 EXIT;
 
 LOOP:
 

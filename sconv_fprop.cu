@@ -122,7 +122,7 @@ bool fprop_K128_N128(const float *I, const float *F, float *O,
   int gridY = K / 128 + (K % 128 != 0);
   int gridZ = N / 128 + (N % 128 != 0);
   CUresult res = cuLaunchKernel(nervana_kernels[kernel_name],
-    gridX, gridY, gridZ, 128, 1, 1, 128 * 8 * 4 + RST * 4 * 2 + 8, 0, args, NULL);
+    gridX, gridY, gridZ, 256, 1, 1, 128 * 8 * 4 + RST * 4 * 2 + 8, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
     std::cerr << "Line " << __LINE__ << " error launching kernel " << kernel_name << " " << res << std::endl;
     return false;
