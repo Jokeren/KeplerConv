@@ -134,28 +134,24 @@
 
     100-103 : loadI<0-3>
     104-107 : loadF<0-3>
-    108-111 : loadI<4-7>
-    112-115 : loadF<4-7>
+    109 : readFs
+    108 : readIs
+    
+    110-114 ~ offsetIn, offsetFk, posCRST, lutSize, lutSizeRcp
+    115-120 ~ writeS, posCRSTf, channel, lutOffset, offsetI, offsetF
+    116-120 ~ tid128, tid, p_and
+    121 : tmp_shl
 
-    117 : readFs
-    116 : readIs
-    118-127 ~ writeS, offsetIn, offsetFk, posCRST, posCRSTf, channel, lutSize, lutSizeRcp, lutOffset, offsetI
-
-    128 : tmp_shl
-    129 : tid128
-
-    130-131 : tmp_param<0-1>
-    132 : p_and
-    133 : tid
-    134-135 : sliceI, sliceF
-    134-135 : sliceIF<0-1>
-    136-139 ~ offsetF, offsetIc, offsetFc
-    140-143 ~ addressF0, addressF1, addressI0, addressI1
+    122-123 : sliceI, sliceF
+    122-123 : sliceIF<0-1>
+    124-125 ~ offsetIc, offsetFc
+    124-125 : tmp_param<0-1>
+    124-127 ~ addressF0, addressF1, addressI0, addressI1
 
     72-79 : cs<0-7>
     80-81 : Out<0-1>
 
-    82-125  ~ writeCs, readCs, alpha, tidOX, tidOX2, tidOY, to, k, n, MPQN1, MPQN60, MPQN, MPQN4
+    82-120  ~ writeCs, readCs, alpha, tidOX, tidOX2, tidOY, to, k, n, MPQN1, MPQN60, MPQN, MPQN4
 
 </REGISTER_MAPPING>
 
@@ -413,18 +409,18 @@ END_SETUP:
 
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
--:-:-:-:00 MOV addressF0, param_F[0];
--:-:-:-:00 MOV addressF1, param_F[1];
+-:-:-:-:00 MOV tmp_param0, param_F[0];
+-:-:-:-:00 MOV tmp_param1, param_F[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
--:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, addressF0;
--:-:-:-:00 @P1 IADD.X trackF1, RZ, addressF1;
+-:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
--:-:-:-:00 MOV addressI0, param_I[0];
--:-:-:-:00 MOV addressI1, param_I[1];
+-:-:-:-:00 MOV tmp_param0, param_I[0];
+-:-:-:-:00 MOV tmp_param1, param_I[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetI, 0x2;
--:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, addressI0;
--:-:-:-:00 @P1 IADD.X trackI1, RZ, addressI1;
+-:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackI1, RZ, tmp_param1;
 
 -:-:-:-:00 @P1 LD.E.128 loadF0, [trackF];
 -:-:-:-:00 @!P1 LDS.128 loadF0, [RZ + addr_zero];
@@ -473,20 +469,27 @@ END_SETUP:
 
 //-:-:-:-:00 @P1 LEA      trackF0.CC, offsetF, param_F[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackF1,    offsetF, param_F[1], RZ, 2;
+-:-:-:-:00 MOV tmp_param0, param_F[0];
+-:-:-:-:00 MOV tmp_param1, param_F[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetF, 0x2;
--:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, addressF0;
--:-:-:-:00 @P1 IADD.X trackF1, RZ, addressF1;
+-:-:-:-:00 @P1 IADD trackF0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackF1, RZ, tmp_param1;
 
 //-:-:-:-:00 @P1 LEA      trackI0.CC, offsetI, param_I[0],     2;
 //-:-:-:-:00 @P1 LEA.HI.X trackI1,    offsetI, param_I[1], RZ, 2;
+-:-:-:-:00 MOV tmp_param0, param_I[0];
+-:-:-:-:00 MOV tmp_param1, param_I[1];
 -:-:-:-:00 @P1 SHL tmp_shl, offsetI, 0x2;
--:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, addressI0;
--:-:-:-:00 @P1 IADD.X trackI1, RZ, addressI1;
+-:-:-:-:00 @P1 IADD trackI0.CC, tmp_shl, tmp_param0;
+-:-:-:-:00 @P1 IADD.X trackI1, RZ, tmp_param1;
 
 -:-:-:-:00 @P1 LD.E.128 loadF0, [trackF];
 -:-:-:-:00 @P1 LD.E.128 loadI0, [trackI];
 
--:-:-:-:00 NOP;
+-:-:-:-:00 MOV addressF0, param_F[0];
+-:-:-:-:00 MOV addressF1, param_F[1];
+-:-:-:-:00 MOV addressI0, param_I[0];
+-:-:-:-:00 MOV addressI1, param_I[1];
 
 LOOP:
 
