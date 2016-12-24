@@ -153,7 +153,7 @@ int main() {
   cudaFree(0);
   // params
   float *d_I, *d_F, *d_O;
-  unsigned int N = 128, C = 1, K = 64, D = 1, H = 28, W = 28, T = 1, R = 5, S = 5;
+  unsigned int N = 128, C = 1, K = 128, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
   unsigned int str_d = 1, str_h = 1, str_w = 1;
   unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;
