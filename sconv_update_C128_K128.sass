@@ -38,6 +38,15 @@
 // avoid register conflicts
 // PT: 0xffffff
 
+// initial->1200
+// bank conflict->1288
+// alignment+dual issue+reuse->1600
+// half ldg.128->1700
+// all ldg.128->1777
+// control codes->1900
+// scheduling->1937
+// reduce unnecessary instructions->2100
+
 <CONSTANT_MAPPING>
     addr_zero : 4x<(128 * 16 + 32) * 4 + 0>
     addr_m    : 4x<(128 * 16 + 32) * 4 + 4>
