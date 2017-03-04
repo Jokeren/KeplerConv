@@ -53,10 +53,11 @@ void magic64(unsigned int d, unsigned int& magic, unsigned int& shift) {
 bool load_kernels(const char* const base_path_cstr) {
     //better would be a vector<string>, but there is a bug in nvcc that prevents this
     // (bug report filed)
-    const int NUM_KERNELS = 5;
+    const int NUM_KERNELS = 6;
     std::string names[NUM_KERNELS] = {
         "sconv_fprop_K64_N64",
         "sconv_fprop_K128_N128",
+        "sconv_bprop_C128_N128",
         "sconv_bprop_C64_N64",
         "sconv_bprop_C1_N64",
         "sconv_update_C128_K128"

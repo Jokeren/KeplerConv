@@ -37,12 +37,12 @@ __global__ void sconv_fprop_K128_N128 (
 	int param_shift_Q,
 	int param_magic_PQ,
 	int param_shift_PQ) {
-		__shared__ float share[128 * 8 * 4 + 8];
+	__shared__ float share[128 * 8 * 4 + 8];
 
-		int tid = threadIdx.x;
+	int tid = threadIdx.x;
 
-		share[tid] = 1;
+	share[tid] = 1;
 
-		*param_O = share[127-tid];
-		*param_test = share[127-tid];
-	}
+	*param_O = share[127-tid];
+	*param_test = share[127-tid];
+}

@@ -1,5 +1,5 @@
 BINS := sconv_fprop_K64_N64 sconv_bprop_C64_N64 sconv_update_C128_K128 \
-  sconv_bprop_C1_N64 sconv_fprop_K128_N128
+  sconv_bprop_C1_N64 sconv_fprop_K128_N128 sconv_bprop_C128_N128
 TARGETS := $(addsuffix .cubin, $(BINS))
 TEMPLATES := $(addsuffix _template.cubin, $(BINS))
 
