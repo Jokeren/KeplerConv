@@ -70,7 +70,7 @@ bool bprop_C128_N128(float *I, const float *F, const float *O,
   int gridZ = N / 128 + (N % 128 != 0);
   std::string kernel_name = "sconv_bprop_C128_N128";
   CUresult res = cuLaunchKernel(nervana_kernels[kernel_name], gridX, gridY, gridZ, 256, 1, 1,
-    0, 0, args, NULL);
+    128 * 8 * 4 + RST * 4 * 2 + 8, 0, args, NULL);
   if (res != CUDA_SUCCESS) {
     std::cerr << "Line " << __LINE__ << " error launching kernel " << kernel_name << " " << res << std::endl;
     return false;
@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
   cudaFree(0);
   // params
   float *d_I, *d_F, *d_O;
-  unsigned int N = 128, C = 128, K = 128, D = 1, H = 5, W = 5, T = 1, R = 5, S = 5;
+  unsigned int N = 128, C = 192, K = 192, D = 1, H = 13, W = 13, T = 1, R = 12, S = 12;
   unsigned int str_d = 1, str_h = 1, str_w = 1;
   unsigned int pad_d = 0, pad_h = 0, pad_w = 0;
   unsigned int M, P, Q;

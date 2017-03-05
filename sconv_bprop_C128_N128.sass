@@ -113,9 +113,8 @@
 
     64-67 : mpq<0-3>
     64-67 : m, p, q, tidY
-    68-70 : blkF, blkI, blkMPQ
-    72-95 ~ tid1, tidX
-    72-107 ~ str_d, str_h, str_w, pq, mask_shr, rst, lutStore, lutStore2, warp_count, mt, pr, qs, dep_thd_mask, dep_thd_bits, dep_thd_cnt, t, r, s, rs, x, y, z, one, rst_prime, x_prime, y_prime, z_prime, ballot, warp_slices, partial, endCRST
+    68-72 : blkF, blkI, blkMPQ, tid1, tidX
+    73-107 ~ str_d, str_h, str_w, pq, mask_shr, rst, lutStore, lutStore2, warp_count, mt, pr, qs, dep_thd_mask, dep_thd_bits, dep_thd_cnt, t, r, s, rs, x, y, z, one, rst_prime, x_prime, y_prime, z_prime, ballot, warp_slices, partial, endCRST
 
     0-63 : czero<00-63>
 
@@ -526,22 +525,21 @@ LOOP:
         j4c63 => "-:-:-:-:00 \@P1 IADD offsetI, offsetI, sliceI;\n",
 
         j5c47 => "-:G:D:-:00 \@P1 LDG.E.128 loadF0, [trackF];\n",
-        j5c63 => "-:-:-:-:00 \@P0 LOP.XOR writeS, writeS, 4x<szShareF+szShareI>;\n",
         
         j6c47 => "-:-:-:-:00 \@P1 SHL tmp_shl, offsetI, 0x2;\n",
         j6c53 => "-:-:-:-:00 \@P1 IADD trackI0.CC, tmp_shl, addressI0;\n",
         j6c61 => "-:-:-:-:00 \@P1 IADD.X trackI1, RZ, addressI1;\n",
-
-        j6c62 => "-:-:-:-:00 \@P0 BAR.SYNC 0;\n".
-                 "-:-:-:-:00 \@P0 LOP.XOR readIs, readIs, 4x<szShareF+szShareI>;\n".
+        j6c62 => "-:G:D:-:00 \@P1 LDG.E.128 loadI0, [trackI];\n",
+        j6c63 => "-:-:-:-:00 \@P0 LOP.XOR readIs, readIs, 4x<szShareF+szShareI>;\n".
+                 "-:-:-:-:00 \@P0 LOP.XOR readFs, readFs, 4x<szShareF+szShareI>;\n".
+                 "-:-:-:-:00 \@P0 BAR.SYNC 0;\n".
                  "-:-:-:-:00 NOP;\n".
                  "-:-:-:-:00 NOP;\n".
                  "-:-:-:-:00 NOP;\n".
-                 "-:-:-:-:00 \@P0 LOP.XOR readFs, readFs, 4x<szShareF>;\n".
                  "-:-:-:-:00 NOP;\n".
                  "-:-:-:-:00 NOP;\n",
 
-        j7c47 => "-:G:D:-:00 \@P1 LDG.E.128 loadI0, [trackI + 4x<0>];\n",
+        j7c47 => "-:-:-:-:00 \@P0 LOP.XOR writeS, writeS, 4x<szShareF+szShareI>;\n",
         j7c63 => "-:-:-:-:00 \@P0 BRA.U LOOP;\n",
     );
 
