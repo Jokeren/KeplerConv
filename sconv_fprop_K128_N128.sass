@@ -503,9 +503,9 @@ LOOP:
     my %insert =
     (
         j0c47 => "-:-:-:-:00 ISETP.GE.AND P1, PT, posCRST,  RZ, PT;\n",
-        j0c53 => "-:-:-:-:00 \@P1 I2F.F32.S32 posCRSTf, posCRST;\n",
+        j0c53 => "-:-:-:-:00 ISETP.GE.AND P0, PT, posCRST, -8, PT;\n",
         #warps
-        j0c62 => "-:-:-:-:00 ISETP.GE.AND P0, PT, posCRST, -8, PT;\n",
+        j0c62 => "-:-:-:-:00 \@P1 I2F.F32.S32 posCRSTf, posCRST;\n",
         #2
         j0c63 => "-:-:-:-:00 \@P1 FMUL channel, posCRSTf, lutSizeRcp;\n",
 
